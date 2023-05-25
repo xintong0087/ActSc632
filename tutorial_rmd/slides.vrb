@@ -1,0 +1,19 @@
+\frametitle{Including R Code Chunks}
+
+    \begin{block}{Sample Code Chunk}
+    \quad    \Verb|```{r, eval = FALSE, warning = FALSE}| \\
+    \quad    \Verb|library(dplyr)| \\
+    \quad    \Verb|A <- c("a", "a", "b", "b")| \\
+    \quad    \Verb|B <- c(5, 10, 15, 20)| \\
+    \quad    \Verb|dataframe <- data.frame(A, B)| \\
+    \quad   \Verb|print(dataframe)| \\
+    \quad    \Verb|```|
+    \end{block}
+
+    \skipv
+
+    \begin{itemize}
+        \item   \texttt{eval = FALSE} will not run the code, but will still display the code.
+        \item   \texttt{warning = FALSE} will suppress warnings when loading packages, etc.
+    \end{itemize}
+

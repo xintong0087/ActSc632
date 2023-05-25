@@ -1,0 +1,213 @@
+\documentclass[9pt,handout]{beamer}
+
+\input{StyleFile.tex}
+
+
+\title[\textbf{Efficient Nested Simulation with ML Proxy}]{Tutorial on R Markdown}
+% \subtitle{\large \bfseries Machine Learning Proxies for High Dimensional Nested Simulation}
+
+\author[\textbf{Xintong Li, xintong.li1@uwaterloo.ca}]
+{\Large\bfseries
+Xintong Li\\\medskip
+xintong.li1@uwaterloo.ca
+} 
+
+\institute[\textbf{University of Waterloo, Actuarial Science}] % Your institution as it will appear on the bottom of every slide, may be shorthand to save space
+{\large\bfseries
+Dept. Statistics and Actuarial Science\\\smallskip
+University of Waterloo % Your institution for the title page
+}
+
+\jointwork{ActSc 632}
+\conference{June 2023}
+
+
+%\usepackage[backend=bibtex,citestyle=authoryear-icomp,natbib,maxcitenames=1]{biblatex}
+%\addbibresource{NestedSim.bib}
+
+% use this so appendices' page numbers do not count
+\usepackage{appendixnumberbeamer}
+\usepackage{booktabs}
+\usepackage{subfigure}
+\usepackage[round]{natbib}
+\usepackage{mathtools}
+
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{bbm}
+\usepackage{xcolor}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{algorithmicx}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{fancyvrb}
+
+\newcommand{\skipv}{\vspace{8pt}}
+
+
+\begin{document}
+
+% Title page, navigation surpressed, no page number
+{
+\beamertemplatenavigationsymbolsempty
+\begin{frame}[plain]
+\titlepage
+\end{frame}
+}
+
+
+
+% TOC, navigation surpressed, no page number
+% {
+% \beamertemplatenavigationsymbolsempty
+% \defbeamertemplate*{headline}{miniframes theme no subsection no content}
+% { \begin{beamercolorbox}{section in head/foot}
+%     \vskip\headheight
+%   \end{beamercolorbox}}
+% \begin{frame}{Outline}
+% \tableofcontents
+% \end{frame}
+% }
+\addtocounter{framenumber}{-1}
+
+\begin{frame}{Introduction}
+
+    R Markdown is an R package that can
+    \skipv
+    \begin{itemize}
+        \item   create documents that combine R code, results, and text;
+        \skipv
+        \item   include plots, tables, and equations;
+        \skipv
+        \item   output documents in different formats, e.g. HTML, PDF, Word, etc.
+    \end{itemize}
+    \skipv
+    \begin{block}{Installing and Using R Markdown in RStudio} 
+        \quad \texttt{install.packages("rmarkdown")} \\ 
+        \quad \texttt{library(rmarkdown)}
+    \end{block}
+    \skipv
+    Thanks \cite{ourcodingclubGettingStarted} for creating and sharing this tutorial.
+
+\end{frame}
+
+\begin{frame}{Using R Markdown in RStudio}
+
+    To create a new RMarkdown file (.Rmd) in RStudio,  
+    \skipv
+    \begin{enumerate}
+        \item   select \texttt{File $\rightarrow$ New File $\rightarrow$ R Markdown};
+        \skipv
+        \item   choose the file type you want to create.
+    \end{enumerate}
+    \skipv
+    For now we will focus on a .html document, which can be easily converted to other file types later.
+    \begin{itemize}
+        \item  .pdf documents can also be generated, but it may require additional software to be installed on your computer.
+    \end{itemize}
+    \begin{block}{Installing .pdf Support}
+        \quad \texttt{install.packages("tinytex")} \\
+        \quad \texttt{tinytex::install\_tinytex()} 
+    \end{block}
+
+\end{frame}
+
+\begin{frame}{Title and Initial Knit}
+
+    \begin{block}{Sample Title}
+        \quad \texttt{---} \\ 
+        \quad \texttt{title: "R Markdown Tutorial"} \\
+        \quad \texttt{author: Xintong Li} \\ 
+        \quad \texttt{date: 2/June/2023} \\ 
+        \quad \texttt{output: html\_document} \\
+        \quad \texttt{---} \\
+    \end{block}
+    \skipv
+
+    \includegraphics[width=\textwidth]{Knit.jpeg}
+
+\end{frame}
+
+\begin{frame}{Formatting Text and Equations}
+
+    We can use regular Markdown syntax in R Markdown to format text.
+    \begin{itemize}
+        \item   \texttt{*italics*}
+        \item   \texttt{**bold**} 
+        \item   \texttt{\#Header 1}
+        \item   \texttt{\#\#Header 2}
+        \item   \texttt{* Unordered list item} 
+        \item   \texttt{1. Ordered list item}
+    \end{itemize}
+    \skipv
+    We can also write equations using LaTeX syntax.
+    \begin{block}{Sample Equation}
+        Code \quad \texttt{\$A = \textbackslash pi \textbackslash times r\^ \quad \{2\}\$} results in:
+        $$A = \pi \times r^{2}$$
+    \end{block}
+
+\end{frame}
+
+
+\begin{frame}[fragile]{Including R Code Chunks}
+    
+    \begin{block}{Sample Code Chunk}
+    \quad    \Verb|```{r, eval = FALSE, warning = FALSE}| \\
+    \quad    \Verb|library(dplyr)| \\
+    \quad    \Verb|A <- c("a", "a", "b", "b")| \\
+    \quad    \Verb|B <- c(5, 10, 15, 20)| \\
+    \quad    \Verb|dataframe <- data.frame(A, B)| \\
+    \quad   \Verb|print(dataframe)| \\
+    \quad    \Verb|```|
+    \end{block}
+
+    \skipv
+
+    \begin{itemize}
+        \item   \texttt{eval = FALSE} will not run the code, but will still display the code. 
+        \item   \texttt{warning = FALSE} will suppress warnings when loading packages, etc. 
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Including Plots and Tables}
+
+    \begin{block}{A Sample Plot}
+        \quad    \Verb|```\{r, fig.width = 4, fig.height = 3\}| \\
+        \quad    \Verb|A <- c("a", "a", "b", "b")| \\
+        \quad    \Verb|B <- c(5, 10, 15, 20)| \\
+        \quad    \Verb|dataframe <- data.frame(A, B)| \\
+        \quad    \Verb|print(dataframe)| \\
+        \quad    \Verb|boxplot(B~A,data=dataframe)| \\
+        \quad    \Verb|```|
+    \end{block}
+    \skipv
+    \begin{block}{A Sample Table}
+        \quad    \texttt{| Plant | Temp. | Growth |}\\
+        \quad    \texttt{|:------|:-----:|-------:|}\\
+        \quad    \texttt{| A     | 20    | 0.65   |}\\
+        \quad    \texttt{| B     | 20    | 0.95   |}\\
+        \quad    \texttt{| C     | 20    | 0.15   |}
+    \end{block}
+\end{frame}
+
+\begin{frame}{Run Codes and Preview before Knitting}
+    \begin{figure}
+    \includegraphics[width=\textwidth]{Notebook_Run.jpg}
+    \caption{Run Codes before Knitting}
+    \end{figure}
+    \begin{figure}
+    \includegraphics[width=\textwidth]{Notebook_Preview.jpg}
+    \caption{Generate a Preview}
+    \end{figure}
+\end{frame}
+
+\begin{frame}[allowframebreaks]
+    \frametitle{References}
+    \bibliographystyle{apa}
+    \bibliography{ref}
+\end{frame}
+\end{document}

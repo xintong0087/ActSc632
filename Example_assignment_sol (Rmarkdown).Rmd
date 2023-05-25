@@ -1,0 +1,126 @@
+---
+title: "STAT 340: Example Assignment Solution"
+author: "Hintz, Erik (ehintz)"
+output: pdf_document
+---
+
+\newcommand*{\T}{^{\top}}
+\renewcommand*{\i}{\leftarrow}
+\newcommand*{\isim}{\overset{\text{ind}}{\sim}}
+\newcommand*{\deq}{\overset{\text{d}}{=}}
+\newcommand*{\IN}{\mathbb{N}} 
+\newcommand*{\IZ}{\mathbb{Z}}
+\newcommand*{\IQ}{\mathbb{Q}}
+\newcommand*{\IR}{\mathbb{R}}
+\newcommand*{\IC}{\mathbb{C}}
+\newcommand*{\Geo}{\operatorname{Geo}}
+\newcommand*{\Exp}{\operatorname{Exp}}
+\newcommand*{\Poi}{\operatorname{Poi}}
+\newcommand*{\NVM}{\operatorname{NVM}}
+\newcommand*{\Par}{\operatorname{Par}}
+\newcommand*{\IG}{\operatorname{IG}}
+\newcommand*{\LN}{\operatorname{LN}}
+\newcommand*{\Cauchy}{\operatorname{Cauchy}}
+\newcommand*{\Log}{\operatorname{Log}}
+\renewcommand*{\U}{\operatorname{U}}
+\newcommand*{\B}{\operatorname{B}}
+\newcommand*{\Bin}{\operatorname{Bin}}
+\newcommand*{\Bern}{\operatorname{Bern}}
+\newcommand*{\Beta}{\operatorname{Beta}}
+\newcommand*{\NB}{\operatorname{NB}}
+\newcommand*{\N}{\operatorname{N}}
+\newcommand*{\I}{\mathbbm{1}}
+\newcommand*{\rd}{\mathrm{d}} 
+\renewcommand*{\mod}{\operatorname{mod}}
+\newcommand*{\arginf}{\operatorname*{arginf}}
+\newcommand*{\argsup}{\operatorname*{argsup}}
+\newcommand*{\ran}{\operatorname{ran}}
+\newcommand*{\rank}{\operatorname{rank}}
+\newcommand*{\sign}{\operatorname{sign}}
+\newcommand*{\round}{\operatorname{round}}
+\renewcommand*{\L}{\mathcal{L}}
+\renewcommand*{\Re}{\operatorname{Re}}
+\renewcommand*{\Im}{\operatorname{Im}}
+\newcommand*{\Li}{\operatorname*{Li}}
+\renewcommand*{\P}{\mathbb{P}} 
+\newcommand*{\E}{\mathbb{E}} 
+\newcommand*{\med}{\operatorname{med}}
+\newcommand*{\Var}{\operatorname{Var}}
+\newcommand*{\cov}{\operatorname{cov}}
+\newcommand*{\cor}{\operatorname{Cor}}
+\newcommand*{\R}{\textsf{R}}
+\newcommand*{\eps}{\varepsilon}
+\renewcommand*{\th}{\mathbf{\theta}}
+\newcommand*{\ba}{\mathbf{a}}
+\newcommand*{\bnu}{\mathbf{\nu}}
+\newcommand*{\bb}{\mathbf{b}}
+\newcommand*{\be}{\mathbf{e}}
+\newcommand*{\blambda}{\mathbf{\lambda}}
+\newcommand*{\bzero}{\mathbf{0}}
+\newcommand*{\bone}{\mathbf{1}}
+\newcommand*{\bt}{\mathbf{t}}
+\newcommand*{\bx}{\mathbf{x}}
+\newcommand*{\by}{\mathbf{y}}
+\newcommand*{\bz}{\mathbf{z}}
+\newcommand*{\bu}{\mathbf{u}}
+\newcommand*{\bU}{\mathbf{U}}
+\newcommand*{\bv}{\mathbf{v}}
+\newcommand*{\bw}{\mathbf{w}}
+\newcommand*{\btheta}{\mathbf{\theta}}
+\newcommand*{\bS}{\mathbf{S}}
+\newcommand*{\bT}{\mathbf{T}}
+\newcommand*{\bZ}{\mathbf{Z}}
+\newcommand*{\bY}{\mathbf{Y}}
+\newcommand*{\bX}{\mathbf{X}}
+\newcommand*{\bmu}{\mathbf{\mu}}
+\newcommand*{\hmu}{\hat{\mu}}
+\newcommand*{\hsigma}{\hat{\sigma}}
+\newcommand*{\hmuMC}{\hat{\mu}^\text{MC}}
+
+
+```{r setup, include=FALSE}
+## Put commands you do not want to be printed here 
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+doPDF <- FALSE # logical if pdfs of plots shall be produced 
+```
+
+## Question 1
+
+Since $X\sim\N(0,1)$, we know that the density of $X$ is given by
+
+$$ \phi(x) = \frac{1}{\sqrt{2\pi}} \exp\left(-\frac{x^2}{2}\right),\quad x\in\IR.$$
+
+We can use the \R\ command `rnorm()` to sample $n=2000$ realizations
+$X_1,\dots,X_n \isim \N(0,1)$. 
+
+```{r}
+set.seed(2) # for reproducibility
+n <- 2000 # sample size
+x <- rnorm(n) # n-vector containing iid realizations of N(0,1)
+est <- c(mean(x), var(x))
+names(est) <- c("Estimated mean", "Estimated sd")
+print(est)
+```
+
+Thus, we find that $\hat{\mu}$ = `r round(est[1], 2)` and $\hsigma$ = `r round(est[2], 2)`.
+
+\newpage
+
+## Question 2 
+
+Next, we plot a histogram of the sample and overlay the true standard-normal
+density. Aside: if `doPDF = TRUE`, compiling this document produces `.pdf` 
+files of the plots (which can then easily be included in a Latex document,
+for instance). 
+
+```{r, fig.align = "center", fig.width = 7, fig.height = 5, fig.show = "hold"}
+if(doPDF) pdf(file = (file <- "fig_histogram_density.pdf"),
+              width = 7, height = 5)
+hist(x, freq = FALSE, main = "Histogram of 10,000 iid N(0,1) realizations")
+curve(dnorm(x), col = 2, lty = 2, lwd = 2, add = TRUE)
+if(doPDF) dev.off() # don't forget to turn off the 'pdf device' 
+```
+

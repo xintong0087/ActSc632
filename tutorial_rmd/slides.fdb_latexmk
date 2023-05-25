@@ -1,13 +1,13 @@
 # Fdb version 3
-["bibtex slides"] 1684984766 "slides.aux" "slides.bbl" "slides" 1684984827
+["bibtex slides"] 1684984766 "slides.aux" "slides.bbl" "slides" 1685049917
   "./apa.bst" 1654185551 23581 2901ede3aa33932bb95d49a3744ed373 ""
   "ref.bib" 1684982510 262 24fe17006288cde1880e0750ff4e10b3 ""
-  "slides.aux" 1684984827 2517 bac2f3ad38ddebf80b7412378fc9348d "pdflatex"
+  "slides.aux" 1685049917 2517 bac2f3ad38ddebf80b7412378fc9348d "pdflatex"
   (generated)
   "slides.bbl"
   "slides.blg"
-["pdflatex"] 1684984826 "/Users/xintong0079/Documents/GitHub/ActSc632/tutorial_rmd/slides.tex" "slides.pdf" "slides" 1684984827
-  "/Users/xintong0079/Documents/GitHub/ActSc632/tutorial_rmd/slides.tex" 1684984826 6230 495437ca099fa3e8c24bfdf98638a8ab ""
+["pdflatex"] 1685049916 "/Users/xintong0079/Documents/GitHub/ActSc632/tutorial_rmd/slides.tex" "slides.pdf" "slides" 1685049917
+  "/Users/xintong0079/Documents/GitHub/ActSc632/tutorial_rmd/slides.tex" 1685049916 6231 6885709356b66e68f8ab4553c2dcdef6 ""
   "/usr/local/texlive/2022/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc" 1136849721 2900 1537cc8184ad1792082cd229ecc269f4 ""
   "/usr/local/texlive/2022/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/local/texlive/2022/texmf-dist/fonts/tfm/jknappen/ec/tctt0900.tfm" 1136768653 1536 bda3e6bf9784a4cc572c754e0c3eeb00 ""
@@ -252,12 +252,12 @@
   "Notebook_Run.jpg" 1684984724 384818 6bfeb080f494145515b5346b2db8fc1b ""
   "StyleFile.tex" 1664584644 7151 58eeaca91ef0e23b2d7287288046ae42 ""
   "UniversityOfWaterloo_logo_vert_rev_rgb.png" 1664584644 37485 e177359fb294aa9ff8052eb81551cfa4 ""
-  "slides.aux" 1684984827 2517 bac2f3ad38ddebf80b7412378fc9348d "pdflatex"
+  "slides.aux" 1685049917 2517 bac2f3ad38ddebf80b7412378fc9348d "pdflatex"
   "slides.bbl" 1684984767 317 3dca95106bb1cabf6589e1f477075e2d "bibtex slides"
-  "slides.nav" 1684984827 1189 5485e955d8c62cb52fdf6d7ea2944b9d "pdflatex"
-  "slides.out" 1684984827 93 aea4b6a8ae45636c75679c2f0dfa4493 "pdflatex"
-  "slides.tex" 1684984826 6230 495437ca099fa3e8c24bfdf98638a8ab ""
-  "slides.vrb" 1684984827 639 4927c6de42ce8616dedd35053294c6c3 "pdflatex"
+  "slides.nav" 1685049917 1189 5485e955d8c62cb52fdf6d7ea2944b9d "pdflatex"
+  "slides.out" 1685049917 93 aea4b6a8ae45636c75679c2f0dfa4493 "pdflatex"
+  "slides.tex" 1685049916 6231 6885709356b66e68f8ab4553c2dcdef6 ""
+  "slides.vrb" 1685049917 639 4927c6de42ce8616dedd35053294c6c3 "pdflatex"
   (generated)
   "slides.aux"
   "slides.log"

@@ -1,0 +1,36 @@
+\documentclass[12pt]{article}
+
+\usepackage[english]{babel}
+\usepackage{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{subfigure}
+\usepackage[margin=1in]{geometry}
+\usepackage{pdfpages}
+\usepackage{mathtools}
+\usepackage{natbib}
+\usepackage{bm}
+\usepackage{multirow}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\setlength\parindent{0pt}
+
+\title{R Markdown Tutorial - Assignment}
+
+\date{Spring 2023}
+
+\begin{document}
+\maketitle
+
+\begin{enumerate}
+    \item The Cauchy distribution is an example of a “heavy-tailed” distribution in that it will have outliers in both tails. This problem involves comparing it with a normal distribution which typically has very few outliers.
+    \begin{enumerate}
+        \item   Use \texttt{set.seed(124)} and \texttt{rcauchy()} with \texttt{n = 100, location = 0, scale = 0.1} to generate a random sample designated as y. \\
+        Generate a second random sample designated as x with \texttt{set.seed(127)} and \texttt{rnorm()} using \texttt{n = 100, mean = 0, sd = 0.15}. Print their sample standard deviations. 
+        \item   Plot their histogram side by side.
+        \item   QQ plots are useful for detecting the presence of heavy tailed distributions. Using \texttt{qqnorm()} and \texttt{qqline()} to conduct QQ plots for both sets of samples. Add color and titles. Use \texttt{cex = 0.5} to control the size of the plotted data points.
+    \end{enumerate}
+\end{enumerate}
+\end{document}

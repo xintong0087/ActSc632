@@ -1,0 +1,223 @@
+library(insuranceData)
+library(foreach)
+data(dataOhlsson)
+dataOhlsson <- within(dataOhlsson, {
+  zon <- factor(zon)
+  mcklass <- factor(mcklass)
+  bonuskl <- factor(bonuskl)
+ kon <- factor(kon)
+  })
+
+levels(dataOhlsson$bonuskl) <-
+list("1"=c("1","2"),"2"=c("3","4"),"3"=c("5","6","7"))
+
+
+#motorcycle %>%
+ # group_by(bonuskl,zon,mcklass,agarald,fordald,kon) %>%
+ # summarize(duration = sum(dataOhlsson$duration))
+
+#https://stackoverflow.com/questions/13559076/group-numeric-values-by-the-intervals
+
+dataOhlsson$motorage_gr <- cut(dataOhlsson$fordald, 
+                       breaks = c(0, 2, 5, 100), 
+                       labels = c("1", "2", "3"), 
+                       right = FALSE)
+
+motorcycle <-
+    data.frame(rating.factor =
+               c(rep("Zone", nlevels(dataOhlsson$zon)),
+                 rep("Vehicle class",   nlevels(dataOhlsson$mcklass)),
+                 rep("Vehicle age", nlevels(dataOhlsson$motorage_gr)),
+                 rep("Bonus class",          nlevels(dataOhlsson$bonuskl))),
+               class =
+               c(levels(dataOhlsson$zon),
+                 levels(dataOhlsson$mcklass),
+                 levels(dataOhlsson$motorage_gr),
+                 levels(dataOhlsson$bonuskl)),
+               stringsAsFactors = FALSE)
+
+new.cols <-
+    foreach (rating.factor = c("zon","mcklass","motorage_gr","bonuskl"),
+             .combine = rbind) %do%
+{
+    nclaims <- tapply(dataOhlsson$antskad,dataOhlsson[[rating.factor]], sum)
+    sums <- tapply(dataOhlsson$duration, dataOhlsson[[rating.factor]],sum)
+    severity <- tapply(dataOhlsson$skadkost,dataOhlsson[[rating.factor]],sum)
+    n.levels <- nlevels(dataOhlsson[[rating.factor]])
+    contrasts(dataOhlsson[[rating.factor]]) <-
+        contr.treatment(n.levels)[rank(-sums, ties.method = "first"), ]
+    data.frame(duration = sums, n.claims = nclaims, totcostperm = severity/1000)
+}
+motorcycle <- cbind(motorcycle, new.cols)
+rm(new.cols)
+
+# pour ubuntu
+#install.packages("dplyr", repos = "https://cloud.r-project.org/") 
+
+library(dplyr)
+
+grDataOhlsson<-dataOhlsson %>% group_by(bonuskl,zon,mcklass,motorage_gr) %>% summarize(duration = sum(duration),antskad=sum(antskad),skadkost=sum(skadkost))
+
+#frequency model with four original factors
+
+#motorfreq<-glm(antskad/duration ~ zon+mcklass+motorage_gr+bonuskl, family=quasipoisson, data=grDataOhlsson, weights=duration)
+
+motorfreq<-glm(antskad ~ zon+mcklass+motorage_gr+bonuskl+offset(log(duration)), family=poisson, data=grDataOhlsson[grDataOhlsson$duration>0,])
+
+with(motorfreq, cbind(res.deviance = deviance, df = df.residual, p =
+pchisq(deviance, df.residual, lower.tail = FALSE)))
+
+#     res.deviance  df        p
+#[1,]     360.2168 389 0.849545
+
+#severity model with four original factors
+
+motorsev<-glm(skadkost/antskad ~  zon+mcklass+motorage_gr+bonuskl, family=Gamma("log"), data=grDataOhlsson[grDataOhlsson$skadkost>0,],weights=antskad)
+
+#     res.deviance  df           p
+#[1,]     351.1129 164 1.13842e-15
+
+
+dataOhlsson$driverage_gr <- cut(dataOhlsson$agarald, 
+                       breaks = c(0, 30,100), 
+                       labels = c("1", "2"), 
+                       right = FALSE)
+
+
+motorcyclev2 <-
+    data.frame(rating.factor =
+               c(rep("Bonus class", nlevels(dataOhlsson$bonuskl)),
+                 rep("Vehicle class",   nlevels(dataOhlsson$mcklass)),
+                 rep("Vehicle age", nlevels(dataOhlsson$motorage_gr)),
+                 rep("Zone",          nlevels(dataOhlsson$zon)),
+                 rep("driverage",nlevels(dataOhlsson$driverage_gr)),
+                  rep("sex",nlevels(dataOhlsson$kon))),
+               class =
+               c(levels(dataOhlsson$bonuskl),
+                 levels(dataOhlsson$mcklass),
+                 levels(dataOhlsson$motorage_gr),
+                 levels(dataOhlsson$zon),
+                 levels(dataOhlsson$driverage_gr),
+                 levels(dataOhlsson$kon)),
+               stringsAsFactors = FALSE)
+
+new.cols <-
+    foreach (rating.factor = c( "zon","mcklass","motorage_gr","bonuskl","driverage_gr","kon"),
+             .combine = rbind) %do%
+{
+    nclaims <- tapply(dataOhlsson$antskad,dataOhlsson[[rating.factor]], sum)
+    sums <- tapply(dataOhlsson$duration, dataOhlsson[[rating.factor]],sum)
+    severity <- tapply(dataOhlsson$skadkost,dataOhlsson[[rating.factor]],sum)
+    n.levels <- nlevels(dataOhlsson[[rating.factor]])
+    contrasts(dataOhlsson[[rating.factor]]) <-
+        contr.treatment(n.levels)[rank(-sums, ties.method = "first"), ]
+    data.frame(duration = sums, n.claims = nclaims, sev = severity/nclaims)
+}
+motorcyclev2 <- cbind(motorcyclev2, new.cols)
+rm(new.cols)
+
+grDataOhlssonv2<-dataOhlsson %>% group_by(bonuskl,zon,mcklass,motorage_gr,kon,driverage_gr) %>% summarize(duration = sum(duration),antskad=sum(antskad),skadkost=sum(skadkost))
+
+#frequency model with additional factors
+
+motorfreqv2<-glm(antskad~ zon +mcklass +motorage_gr+bonuskl  +kon*driverage_gr+offset(log(duration)), family=poisson, data=grDataOhlssonv2[grDataOhlssonv2$duration>0,])
+
+pchisq(motorfreqv2$deviance-motorfreq$deviance,motorfreqv2$df.residual-motorfreq$df.residual,lower.tail=FALSE)
+#1
+
+motorsev2<-glm(skadkost/antskad ~ zon +mcklass +motorage_gr+bonuskl   +kon*driverage_gr, family=Gamma("log"), data=grDataOhlssonv2[grDataOhlssonv2$antskad>0,],weights=antskad)
+
+
+pchisq(motorsev2$deviance-motorsev$deviance*summary(motorsev)$dispersion/summary(motorsev2)$dispersion,motorsev2$df.residual-motorsev$df.residual,lower.tail=FALSE)
+#[1] 7.085095e-11
+
+#donne les multipliers dans le bon ordre
+
+P4<-contrasts(dataOhlsson$bonuskl)
+P2<-contrasts(dataOhlsson$mcklass)
+P3<-contrasts(dataOhlsson$motorage_gr)
+P1<-contrasts(dataOhlsson$zon)
+
+
+startindex<-2
+ord.coeff<-matrix(0,1,dim(motorcycle)[1])
+ords.coeff<-matrix(0,1,dim(motorcycle)[1])
+ord.coeff[1]<-motorfreq$coefficients[1]
+ords.coeff[1]<-motorsev$coefficients[1]
+stderr.coeff<-matrix(0,1,dim(motorcycle)[1])
+stderr.coeff[1]<-summary(motorfreq)$coefficients[1,2]
+stderrs.coeff<-matrix(0,1,dim(motorcycle)[1])
+stderrs.coeff[1]<-summary(motorsev)$coefficients[1,2]
+
+last.indexr<-startindex+nlevels(dataOhlsson$zon)-2
+last.indexl<-last.indexr+1
+ord.coeff[startindex:last.indexl]<-P1%*%motorfreq$coefficients[startindex:last.indexr]
+stderr.coeff[startindex:last.indexl]<-P1%*%summary(motorfreq)$coefficients[startindex:last.indexr,2]
+ords.coeff[startindex:last.indexl]<-P1%*%motorsev$coefficients[startindex:last.indexr]
+stderrs.coeff[startindex:last.indexl]<-P1%*%summary(motorsev)$coefficients[startindex:last.indexr,2]
+
+startindexr<-last.indexr+1
+startindexl<-last.indexl+1
+
+last.indexr<-startindexr+nlevels(dataOhlsson$mcklass)-2
+last.indexl<-startindexl+nlevels(dataOhlsson$mcklass)-1
+ord.coeff[startindexl:last.indexl]<-P2%*%motorfreq$coefficients[startindexr:last.indexr]
+stderr.coeff[startindexl:last.indexl]<-P2%*%summary(motorfreq)$coefficients[startindexr:last.indexr,2]
+ords.coeff[startindexl:last.indexl]<-P2%*%motorsev$coefficients[startindexr:last.indexr]
+stderrs.coeff[startindexl:last.indexl]<-P2%*%summary(motorsev)$coefficients[startindexr:last.indexr,2]
+startindexr<-last.indexr+1
+startindexl<-last.indexl+1
+
+last.indexr<-startindexr+nlevels(dataOhlsson$motorage_gr)-2
+last.indexl<-startindexl+nlevels(dataOhlsson$motorage_gr)-1
+ord.coeff[startindexl:last.indexl]<-P3%*%motorfreq$coefficients[startindexr:last.indexr]
+stderr.coeff[startindexl:last.indexl]<-P3%*%summary(motorfreq)$coefficients[startindexr:last.indexr,2]
+ords.coeff[startindexl:last.indexl]<-P3%*%motorsev$coefficients[startindexr:last.indexr]
+stderrs.coeff[startindexl:last.indexl]<-P3%*%summary(motorsev)$coefficients[startindexr:last.indexr,2]
+startindexr<-last.indexr+1
+startindexl<-last.indexl+1
+
+
+last.indexr<-startindexr+nlevels(dataOhlsson$bonuskl)-2
+last.indexl<-startindexl+nlevels(dataOhlsson$bonuskl)-1
+ord.coeff[startindexl:last.indexl]<-P4%*%motorfreq$coefficients[startindexr:last.indexr]
+stderr.coeff[startindexl:last.indexl]<-P4%*%summary(motorfreq)$coefficients[startindexr:last.indexr,2]
+ords.coeff[startindexl:last.indexl]<-P4%*%motorsev$coefficients[startindexr:last.indexr]
+stderrs.coeff[startindexl:last.indexl]<-P4%*%summary(motorsev)$coefficients[startindexr:last.indexr,2]
+
+# to produce the tables with multipliers and CIs
+
+length<-dim(motorcycle)[1]+1
+TableQ3=matrix(0,length,3)
+TableQ4=matrix(0,length,3)
+TableQ5=matrix(0,length,4)
+
+for(i in 1:length){
+TableQ3[i,1]<-exp(ord.coeff[i])
+TableQ3[i,2]<-exp(ord.coeff[i]-1.96*stderr.coeff[i])
+TableQ3[i,3]<-exp(ord.coeff[i]+1.96*stderr.coeff[i])
+TableQ4[i,1]<-exp(ords.coeff[i])
+TableQ4[i,2]<-exp(ords.coeff[i]-1.96*stderrs.coeff[i])
+TableQ4[i,3]<-exp(ords.coeff[i]+1.96*stderrs.coeff[i])
+TableQ5[i,1]<-exp(ords.coeff[i]+ord.coeff[i])
+TableQ5[i,2]<-exp(ords.coeff[i]+ord.coeff[i]-1.96*sqrt(stderrs.coeff[i]^2+stderr.coeff[i]^2))
+TableQ5[i,3]<-exp(ords.coeff[i]+ord.coeff[i] +1.96*sqrt(stderrs.coeff[i]^2+stderr.coeff[i]^2))
+}
+
+oldtariff<-c(7.768, 4.227 ,1.336,1.000,1.734,1.402,1.402,
+0.625 ,0.769,1.000, 1.406 ,1.875 ,4.062 ,6.873,2.000,1.200, 1.000 ,1.250,1.125,1.000)
+
+
+TableQ5[-1,4]<-as.numeric(oldtariff)
+
+col1<-c(0,motorcycle[,1])
+col2<-c(0,motorcycle[,2])
+
+FinalTable3<-data.frame(col1,col2,TableQ3)
+FinalTable4<-data.frame(col1,col2,TableQ4)
+FinalTable5<-data.frame(col1,col2,TableQ5)
+
+write.table(format(FinalTable3,dig=4),"/Users/clemieux/cours/act632/s2017/Projects/TableQ3.txt",col.names=FALSE,quote=FALSE,sep="&")
+write.table(format(FinalTable4,dig=4),"/Users/clemieux/cours/act632/s2017/Projects/TableQ4.txt",col.names=FALSE,quote=FALSE,sep="&")
+write.table(format(FinalTable5,dig=4),"/Users/clemieux/cours/act632/s2017/Projects/TableQ5.txt",col.names=FALSE,quote=FALSE,sep="&")
+

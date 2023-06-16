@@ -1,0 +1,672 @@
+\documentclass[aspectratio=169,professionalfonts,mathserif,handout]{beamer}
+
+\usepackage{pgf,tikz}
+\usetikzlibrary{arrows,automata}
+\usepackage{dsfont}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{eulervm}
+\usepackage{wasysym}
+\usepackage[scaled]{helvet}
+\usepackage[english]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{hhline}
+\usepackage{cancel}
+\usepackage{comment}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{bm}
+\usepackage{array}
+\usepackage{ulem}
+\usepackage[absolute,overlay]{textpos}
+\usepackage{algorithm2e}
+
+
+
+\usetikzlibrary{shapes,patterns,positioning,shapes.misc}
+\renewcommand{\arraystretch}{1.2}
+\frenchspacing
+
+\newcommand\itemshape[1]{%
+  \setbeamertemplate{itemize item}[#1]%
+  \usebeamertemplate{itemize item}%
+}
+
+%-----------------------------------------------------------------------------%
+% tikz
+%-----------------------------------------------------------------------------%
+
+
+
+\tikzset{cross/.style={cross out, draw=black, minimum size=2*(#1-\pgflinewidth), inner sep=0pt, outer sep=0pt},
+%default radius will be 1pt. 
+cross/.default={3pt}}
+
+
+%-----------------------------------------------------------------------------%
+% Colors
+%-----------------------------------------------------------------------------%
+
+% Black & White:
+
+\definecolor{White}{rgb}{1,1,1}
+\definecolor{LightGray}{rgb}{.91,.91,.91}
+\definecolor{MediumGray}{rgb}{.75,.75,.75}
+\definecolor{DarkGray}{rgb}{.4,.4,.4}
+\definecolor{VeryDarkGray}{rgb}{.2,.2,.2}
+\definecolor{Black}{rgb}{0,0,0}
+
+% Purples:
+
+\definecolor{RedPurple}{rgb}{.9,.0,.7}
+\definecolor{LightPurple}{rgb}{.45,.0,.45}
+\definecolor{DarkPurple}{rgb}{.1,.0,.3}
+\definecolor{LightMagenta}{rgb}{0.95,.9,1}
+
+% Blues:
+
+\definecolor{Blue}{rgb}{0,0,0.9}
+\definecolor{Navy}{rgb}{0,0,.5}
+\definecolor{DarkBlue}{rgb}{0,0.1,0.3}
+
+% Greens:
+
+\definecolor{DarkGreen}{rgb}{.0,.2,.0}
+\definecolor{Green}{rgb}{.0,.4,.0}
+
+% Browns:
+
+\definecolor{YellowBrown}{rgb}{1,1,0.7}
+\definecolor{Cream}{rgb}{.9,.9,.75}
+\definecolor{DarkerCream}{rgb}{.7,.7,.63}
+\definecolor{Brown}{rgb}{0.2,0.25,0.1}
+\definecolor{Coal}{rgb}{0.1,0.1,0.08}
+
+% Other
+
+\definecolor{CookieDough}{HTML}{ccccaa}
+\definecolor{Clay}{HTML}{757561}
+\definecolor{Licorice}{HTML}{21211c}
+\definecolor{Red}{rgb}{0.8,0,0}
+
+\colorlet{Back}{White}
+\colorlet{Text}{Black}
+\colorlet{TitleText}{DarkBlue}
+\colorlet{Highlight}{DarkBlue}
+
+\newcommand{\dg}[1]{{\color{Green}{#1}}}
+\newcommand{\ora}[1]{{\color{orange}{#1}}}
+\newcommand{\bl}[1]{{\color{Blue}{#1}}}
+\newcommand{\red}[1]{{\color{Red}{#1}}}
+\newcommand{\purple}[1]{{\color{DarkPurple}{#1}}}
+\newcommand{\grey}[1]{{\color{MediumGray}{#1}}}
+
+%\colorlet{Back}{Black!95}
+%\colorlet{Text}{White}
+%\colorlet{TitleText}{Blue}
+%\colorlet{Highlight}{yellow}
+
+%-----------------------------------------------------------------------------%
+% Macros
+%-----------------------------------------------------------------------------%
+
+\newcommand{\tsp}{\mspace{1mu}}
+\newcommand{\htsp}{\mspace{0.5mu}}
+\newcommand{\op}[1]{\operatorname{#1}}
+\newcommand{\tr}{\operatorname{Tr}}
+\newcommand{\rank}{\operatorname{rank}}
+\renewcommand{\t}{{\scriptscriptstyle\mathsf{T}}}
+\newcommand{\reg}[1]{\mathsf{#1}}
+\newcommand{\im}{\op{im}}
+\newcommand{\fid}{\op{F}}
+%\renewcommand{\vec}{\op{vec}}
+\newcommand{\I}{\mathds{1}}
+
+\newcommand{\abs}[1]{\lvert #1 \rvert}
+\newcommand{\bigabs}[1]{\bigl\lvert #1 \bigr\rvert}
+\newcommand{\Bigabs}[1]{\Bigl\lvert #1 \Bigr\rvert}
+\newcommand{\biggabs}[1]{\biggl\lvert #1 \biggr\rvert}
+\newcommand{\Biggabs}[1]{\Biggl\lvert #1 \Biggr\rvert}
+
+\newcommand{\ip}[2]{\langle #1 , #2\rangle}
+\newcommand{\bigip}[2]{\bigl\langle #1, #2 \bigr\rangle}
+\newcommand{\Bigip}[2]{\Bigl\langle #1, #2 \Bigr\rangle}
+\newcommand{\biggip}[2]{\biggl\langle #1, #2 \biggr\rangle}
+\newcommand{\Biggip}[2]{\Biggl\langle #1, #2 \Biggr\rangle}
+
+\newcommand{\ceil}[1]{\lceil #1 \rceil}
+\newcommand{\bigceil}[1]{\bigl\lceil #1 \bigr\rceil}
+\newcommand{\Bigceil}[1]{\Bigl\lceil #1 \Bigr\rceil}
+\newcommand{\biggceil}[1]{\biggl\lceil #1 \biggr\rceil}
+\newcommand{\Biggceil}[1]{\Biggl\lceil #1 \Biggr\rceil}
+
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
+\newcommand{\bigfloor}[1]{\bigl\lfloor #1 \bigr\rfloor}
+\newcommand{\Bigfloor}[1]{\Bigl\lfloor #1 \Bigr\rfloor}
+\newcommand{\biggfloor}[1]{\biggl\lfloor #1 \biggr\rfloor}
+\newcommand{\Biggfloor}[1]{\Biggl\lfloor #1 \Biggr\rfloor}
+
+\newcommand{\norm}[1]{\lVert\tsp #1 \tsp\rVert}
+\newcommand{\bignorm}[1]{\bigl\lVert\tsp #1 \tsp\bigr\rVert}
+\newcommand{\Bignorm}[1]{\Bigl\lVert\tsp #1 \tsp\Bigr\rVert}
+\newcommand{\biggnorm}[1]{\biggl\lVert\tsp #1 \tsp\biggr\rVert}
+\newcommand{\Biggnorm}[1]{\Biggl\lVert\tsp #1 \tsp\Biggr\rVert}
+
+
+
+
+%\usepackage{amsfonts}
+%\usepackage{graphicx}
+%\usepackage{epsfig}
+%\usepackage{subfigure}
+%\usepackage{amssymb}% sophisticated mathematical symbols with amstex
+%\usepackage{mathtools}% fix amsmath deficiencies
+%\usepackage[T1]{fontenc}
+%\usepackage{bm}% for bold math symbols
+%\usepackage{bbm}% only for indicator functions
+%\useoutertheme{default}
+%\beamersetuncovermixins{\opaqueness<1>{25}}{\opaqueness<2->{15}}
+
+\def\ba{{\mathbf a}}
+\def\bd{{\mathbf d}}
+%\def\bi{{\mathbf i}}
+\def\bu{{\mathbf u}}
+\def\bx{{\mathbf x}}
+\def\bU{{\bf U}}
+\def\bV{{\mathbf V}}
+\def\bz{{\mathbf z}}
+\def\bW{{\mathbf W}}
+\def\bv{{\mathbf v}}
+%\def\by{{\mathbf y}}
+\def\bY{{\mathbf Y}}
+\def\bw{{\mathbf w}}
+\def\bX{{\mathbf X}}
+\def\QMC{{\rm QMC}}
+\def\bh{{\mathbf h}}
+\def\MC{{\rm MC}}
+\def\tra{{\mathrm T }}
+\def\bz {\mathbf{z}}
+\def\btpsi {\tilde{\boldsymbol{\psi}}}
+\def\btv {\tilde{\mathbf{v}}}
+\def\IR {\mathbb{R}}
+\def\IP {\mathbb{P}}
+\newcommand*{\IE}{\mathbbm{E}}
+\newcommand*{\D}{\operatorname{D}}
+\newcommand*{\Bcal}{\mathcal{B}}
+\newcommand*{\Exp}{\operatorname{Exp}}
+\newcommand*{\psii}{{\psi^{-1}}}
+\newcommand*{\LS}{\mathcal{LS}}
+\newcommand*{\LSi}{\LS^{-1}}
+
+%\xdefinecolor{mypurple}{rgb}{0.6,0,0.7}
+%\xdefinecolor{darkgreen}{rgb}{0,0.6,0}
+%\xdefinecolor{MidYellow}{rgb}{1,0.5,0.2}
+
+%\newcommand{\magenta}[1]{{\color{magenta}{#1}}}
+%\newcommand{\gr}[1]{{\color{darkgreen}{#1}}}
+%\newcommand{\MidYellow}[1]{{\color{MidYellow}{#1}}}
+%\newcommand{\gray}[1]{{\color{gray}{#1}}}
+
+\def\apause{\pause}
+%\def\apause{}
+
+\newenvironment{mylist}[1]{
+  \begin{list}{}{
+      \setlength{\leftmargin}{#1}
+      \setlength{\rightmargin}{0mm}
+      \setlength{\labelsep}{2mm}
+      \setlength{\labelwidth}{8mm}
+      \setlength{\itemsep}{0mm}}}{\end{list}}
+
+\newcommand{\reference}[1]{\textcolor{Navy}{\footnotesize \sc #1}}
+
+\newcommand{\highlight}[1]{\textcolor{Highlight}{\bf #1}}
+
+%-----------------------------------------------------------------------------%
+%Ruodu's stuff
+%-----------------------------------------------------------------------------%
+
+
+\def\fsd{\succcurlyeq_{\hspace{- 0.4 mm} _{fsd}}}
+\def\sfsd{\succ_{\hspace{-0.4 mm} _{fsd}}}
+\def\ssdmu{\succcurlyeq_{\hspace{- 0.4 mm} _{SSD\(\mu\)}}}
+\def\ssdnu{\succcurlyeq_{\hspace{- 0.4 mm} _{SSD\(\nu\)}}}
+\def\ssdP{\succcurlyeq_{\hspace{- 0.4 mm} _{SSD\(P\)}}}
+\def\sssdmu{\succ_{\hspace{- 0.4 mm} _{SSD\(\mu\)}}}
+\def\sssdnu{\succ_{\hspace{- 0.4 mm} _{SSD\(\nu\)}}}
+\def\sssdP{\succ_{\hspace{- 0.4 mm} _{SSD\(P\)}}}
+\def\Ito{It\^o}
+
+\newcommand{\be}{\begin{eqnarray}}
+\newcommand{\ee}{\end{eqnarray}}
+\newcommand{\by}{\begin{eqnarray*}}
+\newcommand{\ey}{\end{eqnarray*}}
+\newcommand{\bi}{\begin{itemize}}
+\newcommand{\ei}{\end{itemize}}
+
+\DeclareMathOperator*{\argmax}{\arg\max}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{assumption}[theorem]{Assumption}
+\newtheorem{proposition}[theorem]{Proposition}
+
+\setbeamercolor{yellow}{fg=black,bg=yellow}
+\setbeamercolor{lightyellow}{fg=black,bg=yellow!40}
+\setbeamercolor{orange}{fg=black,bg=orange}
+\setbeamercolor{lightorange}{fg=black,bg=orange!40}
+\setbeamercolor{lavender}{fg=black,bg= LavenderBlush!20!Lavender}
+
+\newenvironment{colorblock}[2]
+{\setbeamercolor{item}{fg=#1,bg=#1}\begin{beamerboxesrounded}[upper=#1,lower=#2,shadow=true]}
+{\end{beamerboxesrounded}}
+
+\definecolor{darkblue}{rgb}{0.1,0.1,0.6}
+\definecolor{darkgreen}{rgb}{0.1,0.6,0.1}
+\definecolor{fond}{RGB}{240,240,240}
+
+\newcommand{\bluearrow}{\color{darkblue}{$\blacktriangleright$}\color{black}}
+\newcommand{\redarrow}{\color{red}{$\blacktriangleright$}\color{black}}
+\newcommand{\greenarrow}{\color{green}{$\blacktriangleright$}\color{black}}
+
+\renewcommand{\(}{\left(}
+\renewcommand{\)}{\right)}
+\renewcommand{\[}{\left[}
+\renewcommand{\]}{\right]}
+\newcommand{\w}{\widehat}
+
+
+%-----------------------------------------------------------------------------%
+% Beamer stuff. Default theme -- everything needed is here.
+%-----------------------------------------------------------------------------%
+
+\usetheme{default}
+\usefonttheme[onlymath]{serif}
+
+% Aspect ratio is set to 16:9
+% Total page width is 16cm
+
+\setbeamersize{%
+  text margin left=8mm,
+  text margin right=8mm}
+
+\addtolength{\headsep}{2.5mm}
+
+\setbeamertemplate{navigation symbols}{}
+
+\setbeamerfont{block title}{series=\bfseries}
+\setbeamerfont{titlelike}{series=\bfseries}
+\setbeamercolor{structure}{fg=Black}
+
+\setbeamercolor*{titlelike}{fg=TitleText,bg=}
+\setbeamercolor{normal text}{fg=Text,bg=Back}
+
+\newcommand{\mytitle}[1]{\vspace*{-1mm}%
+  \centerline{\highlight{\Large #1}}\vspace*{3mm}}
+
+\newenvironment{slidebox}{%
+  \begin{minipage}[c][7.5cm][t]{14.4cm}\raggedright}{%
+  \end{minipage}}
+
+\newenvironment{halfpage}{%
+  \begin{minipage}[c][6.5cm][t]{6.4cm}\raggedright}{%
+  \end{minipage}}
+
+%-----------------------------------------------------------------------------%
+\title{ACTSC 632 Week 4}
+\author{Christiane Lemieux}
+\date{\today}
+
+
+\begin{document}
+
+
+%-----------------------------------------------------------------------------%
+
+\begin{frame}
+  \begin{slidebox}
+    
+    \vspace{7mm}
+    \begin{center}
+      \begin{tikzpicture}
+
+        \onslide<1>{%
+        \node at (0,0) {%
+          \makebox(0,0){\includegraphics[width=5.5cm]{UWlogo.eps}}};}
+
+        \onslide<1>{%
+        \node at (10.5,0) {%
+          \makebox(0,0){ACTSC 632 Spring 2023%
+            \rule[-3mm]{0mm}{6mm}
+            \rule{6mm}{0mm}}};}
+        
+      \end{tikzpicture}
+    \end{center}
+    
+    \vspace{6mm}
+    
+    \begin{center}
+      \onslide<1>{%
+      \highlight{\large Data Science with Actuarial Applications}\\[3mm]}
+       \onslide<1>{\Huge {\color{darkblue} Week 6}}\\[6mm]
+          \onslide<1>{\large %
+        {\large Xintong Li}\\[3mm]
+        Department of Statistics and Actuarial Science}
+    \end{center}
+    
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+\mytitle{Last Week}
+
+\begin{itemize}
+    \item $Y$ is a key ratio: claim frequency or claim severity
+    \pause
+    \item $X$ is a vector of rating factors, modeled as categorical variables (can still use dummy binary variables to implement this in R)
+    \pause
+    \item terminology: duration, claim frequency, claim severity, rating cell
+    \pause
+    \item 3 key assumptions
+    \pause
+    \item ${\rm E}(Y) = \mu$, ${\rm Var}(Y) = \sigma^2/w$
+    \pause
+    \item Moped example (in R)
+\end{itemize}
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+\mytitle{Today}
+
+\begin{itemize}
+    \item Introduce the idea of multiplicative models
+    \pause
+    \item Basic model for claim frequency
+    \pause
+    \item Basic model for claim severity
+    \pause
+    \item How will we use GLMs
+
+\end{itemize}
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+\mytitle{Note on Multiplicative Models}
+\begin{tikzpicture}[domain=0:2]
+\draw[blue, very thick] (0,0)  rectangle (14,6) ; 
+\end{tikzpicture}
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+\mytitle{2.4.1 Basic model for claim frequency}
+ \begin{tikzpicture}[domain=0:2]
+\draw[blue, very thick] (0,0)  rectangle (14,6) ; 
+\end{tikzpicture}
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+\mytitle{Reproductive property of the relative Poisson distribution}
+ \begin{tikzpicture}[domain=0:2]
+\draw[blue, very thick] (0,0)  rectangle (14,6) ; 
+\end{tikzpicture}
+\end{slidebox}\end{frame}
+
+
+\begin{frame}\begin{slidebox}
+\mytitle{2.4.2 Basic model for claim severity}
+ \begin{tikzpicture}[domain=0:2]
+\draw[blue, very thick] (0,0)  rectangle (14,6) ; 
+\end{tikzpicture}
+
+For both the frequency and the severity, the impact of the rating factors will be incorporated via $\mu_i$, using the theory of GLMs.
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+\mytitle{2.5 The basics of pricing with GLMs}
+
+\begin{itemize}
+    \item \highlight{Goal:} determine how key ratio $Y$ varies with rating factors
+    \pause
+    \item Q: Why not use multiple linear regression?
+    \pause
+    \begin{itemize}
+        \item (A) Assumption of normally distributed error may not be reasonable, e.g., for nb of claims (which is discrete) or claim size (which is skewed and $>0$)
+        \pause
+        \item (B) modeling $Y$ as a linear (additive) fct of the rating factors clashes with our intuition to use a multiplicative model
+        \pause
+        \item (C) error term forced to have constant variance
+    \end{itemize}
+    \pause
+    \item \highlight{Advantages of GLM for pricing}
+    \pause
+    \begin{enumerate}
+        \item has theory that can be used to estimate std error, build CIs, do model selection
+        \pause
+        \item used in many areas, so can benefit for developments elsewhere
+        \pause
+        \item std software is available for fitting 
+    \end{enumerate}
+\end{itemize}
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+\mytitle{Quick review of GLMs}
+ \begin{tikzpicture}[domain=0:2]
+\draw[blue, very thick] (0,0)  rectangle (14,6) ; 
+\end{tikzpicture}
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+\mytitle{What is next}
+
+\begin{itemize}
+\item Next we discuss how \highlight{Exponential Dispersion Models (EDM)} can be used to address (A) (\grey{Assumption of normally distributed error may not be reasonable})
+in the context of non-life insurance pircing.
+\pause
+\item Then we'll review how the flexibility in choosing the \highlight{link function} can be used to address (B) (\grey{modeling $Y$ as a linear (additive) fct of the rating factors}) and allow us to use a multiplicative model
+\end{itemize}
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+\mytitle{2.5.1 Exponential Dispersion Models}
+ \begin{tikzpicture}[domain=0:2]
+\draw[blue, very thick] (0,0)  rectangle (14,6) ; 
+\end{tikzpicture}
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+\mytitle{Recap of Week 6 -- Lecture 1}
+\begin{itemize}
+    \item \highlight{Basic claim frequency model}: use
+    $$
+\mathbb{P}\left(  Y_{i}=y_{i}\right)  =\frac{\left(  w_{i}\mu_{i}\right)
+^{w_{i}y_{i}}e^{-w_{i}\mu_{i}}}{k!}\text{,} \qquad y_{i}\in\left\{  0,\frac{1}{w_{i}},\frac{2}{w_{i}},...\right\}  
+$$
+\pause
+\item \highlight{Basic claim severity model}: use
+\begin{align*}
+f_{Y_{i}}\left(  y\right)   &  =\frac{\left(  \frac{\mu_{i}}{\xi_{i}}%
+w_{i}\right)  ^{\frac{w_{i}\left(  \mu_{i}\right)  ^{2}}{\xi_{i}}}%
+y^{\frac{w_{i}\left(  \mu_{i}\right)  ^{2}}{\xi_{i}}-1}e^{-\frac{w_{i}\mu_{i}%
+}{\xi}y}}{\Gamma\left(  \frac{w_{i}\left(  \mu_{i}\right)  ^{2}}{\xi_{i}%
+}\right)  }, \qquad y_i>0\nonumber\\
+\end{align*}
+
+\end{itemize}
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+\mytitle{Recap of Week 6 -- Lecture 1}
+\begin{itemize}
+\item $Y_i$ is EDM if pdf/pmf given by 
+$$
+f_{Y_{i}}\left(  y_{i},\theta_{i},\phi\right)  =\exp\left\{  \frac{y_{i}%
+\theta_{i}-b\left(  \theta_{i}\right)  }{\frac{\phi}{w_{i}}}+c\left(
+y_{i},\phi,w_{i}\right)  \right\}  \text{,} \label{EDM}%
+$$
+\pause
+\item Forgot to provide notation $\eta = \beta_0 + \beta_1 x_{1}+\ldots + \beta_p x_p$ for the linear predictor
+\end{itemize}
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+\mytitle{Additional properties of EDM}
+ \begin{tikzpicture}[domain=0:2]
+\draw[blue, very thick] (0,0)  rectangle (14,6) ; 
+\end{tikzpicture}
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+\mytitle{Checking that relative Poisson distribution is EDM}
+ \begin{tikzpicture}[domain=0:2]
+\draw[blue, very thick] (0,0)  rectangle (14,6) ; 
+\end{tikzpicture}
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+\mytitle{Checking that Gamma model is an EDM}
+ \begin{tikzpicture}[domain=0:2]
+\draw[blue, very thick] (0,0)  rectangle (14,6) ; 
+\end{tikzpicture}
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+\mytitle{Reproductive property of EDM family}
+
+\highlight{Result:} If $Y_1$ and $Y_2$ are two independent rv's from the same EDM family (i.e., same $b(\cdot)$, same $\mu$ and same $\phi$) but with possibly different weights $w_1$ and $w_2$ then $Y = \frac{w_1Y_1+w_2Y_2}{w_1+w_2}$ is in same EDM family but with weight $w_1+w_2$.
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+\mytitle{2.5.2 Link Function}
+
+\begin{itemize}
+ \item Previous topic helped us identify a rich class of models for $Y$ that are useful in the context of GLMs
+ \pause
+ \item The \highlight{link function} provides flexibility to model how the
+response (i.e., the key ratio $Y_{i}$) relates to the rating factors. 
+\pause
+\item  This is done by
+imposing a \highlight{relationship} between the mean response $\mathbb{E}\left[
+Y_{i}\right]  =\mu_{i}$ and the set of rating factors.
+\end{itemize}
+
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+\mytitle{Example with one rating factor}
+\begin{itemize}
+    
+
+\item Consider a tariff model with \dg{only one rating factor} taking possible values
+$\left\{  a,b,c\right\}$.
+\pause
+\item One category will be the \dg{base category} for the rating factor (say,
+category $a$) and \highlight{2 binary variables} will be created to indicate \bl{whether the
+category is $b$ or not}, and \ora{whether the category is $c$ or not}. \pause Hence we get the linear predictor
+
+
+$$
+\eta_{i}=\beta_{0}+\bl{\beta_{1}}x_{i1}+\ora{\beta_{2}}x_{i2}\text{,}%
+$$
+where \bl{$x_{i1}=1$ if tariff cell $i$ has category $b$} for rating
+factor (or otherwise 0) and \ora{$x_{i2}=1$ if tariff cell $i$ has category $c$} for
+its rating factor (or otherwise 0). \pause Hence
+
+\begin{center}
+\begin{tabular}
+[c]{|ccc|}\hline
+\multicolumn{1}{|c|}{Tariff cell $i$} & Rating factor & $\eta_{i}%
+$\\\hline\hline
+\multicolumn{1}{|c|}{1} & $\left(  a\right)  $ & $\beta_{0}$\\
+\multicolumn{1}{|c|}{2} & $\left(  b\right)  $ & $\beta_{0}+\bl{\beta_{1}}$\\
+\multicolumn{1}{|c|}{3} & $\left(  c\right)  $ & $\beta_{0}+\ora{\beta_{2}}$\\\hline
+\end{tabular}
+\end{center}
+\end{itemize}
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+
+
+\mytitle{Example with two rating factors}
+Consider now a tariff model with two rating factors:
+\pause
+\begin{itemize}
+\item \bl{Rating factor 1 takes on two possible values} $\left\{  a,b\right\}  $;
+\pause
+\item \ora{Rating factor 2 takes on three possible values} $\left\{  c,d,e\right\}
+$.
+\pause
+\item Create \bl{1 binary variable} for Rating
+factor 1 (assuming base category is $a$)
+\pause
+\item Create \ora{2 binary variables} for Rating factor 2 (assuming base category is $c$).
+\end{itemize}
+\pause
+Hence, we define
+$$
+\eta_{i}=\beta_{0}+\bl{\beta_{1}}x_{i1}+\ora{\beta_{2}}x_{i2}+\ora{\beta_{3}}x_{i3}\text{,}%
+$$
+\pause where
+
+\begin{itemize}
+\item \bl{$x_{i1}=1$} if tariff cell $i$ has category $b$ for its first rating
+factor (or otherwise 0);
+\pause
+\item \ora{$x_{i2}=1$} if tariff cell $i$ has category $d$ for its second rating
+factor (or otherwise 0)
+\pause
+\item \ora{$x_{i3}=1$} if tariff cell $i$ has category $e$ for its second rating
+factor (or otherwise 0)
+\end{itemize}
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+
+
+\begin{center}
+\begin{tabular}
+[c]{|ccc|}\hline
+\multicolumn{1}{|c|}{Tariff cell $i$} & Rating factors & $\eta_{i}%
+$\\\hline\hline
+\multicolumn{1}{|c|}{1} & $\left(  a,c\right)  $ & $\beta_{0}$\\
+\multicolumn{1}{|c|}{2} & $\left(  a,\ora{d}\right)  $ & $\beta_{0}+\ora{\beta_{2}}$\\
+\multicolumn{1}{|c|}{3} & $\left(  a,\ora{e}\right)  $ & $\beta_{0}+\ora{\beta_{3}}$\\
+\multicolumn{1}{|c|}{4} & $\left(  \bl{b},c\right)  $ & $\beta_{0}+\bl{\beta_{1}}$\\
+\multicolumn{1}{|c|}{5} & $\left(  \bl{b},\ora{d}\right)  $ & $\beta_{0}+\bl{\beta_{1}}%
++\ora{\beta_{2}}$\\
+\multicolumn{1}{|c|}{6} & $\left(  \bl{b},\ora{e}\right)  $ & $\beta_{0}+\bl{\beta_{1}}%
++\ora{\beta_{3}}$\\\hline
+\end{tabular}
+\end{center}
+
+Vectors of binary variables corresponding to 6 rating cells:
+\begin{align*}
+\vec{x}_{1} &= (1,0,0,0) & \vec{x}_{4} &= (1,1,0,0)\\
+\vec{x}_{2} &= (1,0,1,0) & \vec{x}_{5} &= (1,1,1,0) \\
+\vec{x}_{3} &= (1,0,0,1) & \vec{x}_{6} &= (1,1,0,1)
+\end{align*}
+$X = [x_{ij}]_{i=1,j=1}^{4\,\,\,\,\,\,\,\,6}$ is the design matrix
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+\begin{itemize}
+\item More generally,  for a rating factor with say $p$ categories,
+we shall create $\left(  p-1\right)  $ binary variables, each of which takes
+the value $1$ if tariff cell $i$ is in a given category and $0$, otherwise.
+\pause
+\item 
+One of the categories is assumed to be the base category which is why we
+create only $\left(  p-1\right)  $ binary variables. 
+\end{itemize}
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+\mytitle{2.5.2 Link Function}
+ \begin{tikzpicture}[domain=0:2]
+\draw[blue, very thick] (0,0)  rectangle (14,6) ; 
+\end{tikzpicture}
+\end{slidebox}\end{frame}
+
+\end{document}
+
+\begin{frame}\begin{slidebox}
+\end{slidebox}\end{frame}

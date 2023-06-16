@@ -347,7 +347,7 @@ cross/.default={3pt}}
     \begin{center}
       \onslide<1>{%
       \highlight{\large Data Science with Actuarial Applications}\\[3mm]}
-       \onslide<1>{\Huge {\color{darkblue} Week 6}}\\[6mm]
+       \onslide<1>{\Huge {\color{darkblue} Week 7}}\\[6mm]
           \onslide<1>{\large %
         {\large Xintong Li}\\[3mm]
         Department of Statistics and Actuarial Science}
@@ -361,15 +361,15 @@ cross/.default={3pt}}
 \begin{itemize}
     \item $Y$ is a key ratio: claim frequency or claim severity
     \pause
-    \item $X$ is a vector of rating factors, modeled as categorical variables (can still use dummy binary variables to implement this in R)
+    \item $X$ is a vector of rating factors, modeled as categorical variables 
     \pause
-    \item terminology: duration, claim frequency, claim severity, rating cell
+    \item Exponential Dispersion Models (EDM)
     \pause
-    \item 3 key assumptions
+    \item Multiplicative models (logarithmic link function)
     \pause
-    \item ${\rm E}(Y) = \mu$, ${\rm Var}(Y) = \sigma^2/w$
+    \item Claim frequency: Poisson regression
     \pause
-    \item Moped example (in R)
+    \item Claim severity: Gamma regression
 \end{itemize}
 \end{slidebox}\end{frame}
 
@@ -377,33 +377,32 @@ cross/.default={3pt}}
 \mytitle{Today}
 
 \begin{itemize}
-    \item Introduce the idea of multiplicative models
+    \item Estimating the parameters of a GLM from: 
     \pause
-    \item Basic model for claim frequency
+    \item Writing the log-likelihood function
     \pause
-    \item Basic model for claim severity
+    \item Taking the derivative of the log-likelihood function
     \pause
-    \item How will we use GLMs
-
+    \item Solving for the maximum likelihood estimators (MLE)
 \end{itemize}
 \end{slidebox}\end{frame}
 
 \begin{frame}\begin{slidebox}
-\mytitle{Note on Multiplicative Models}
+\mytitle{2.6 Parameter Estimation (MLE)}
 \begin{tikzpicture}[domain=0:2]
 \draw[blue, very thick] (0,0)  rectangle (14,6) ; 
 \end{tikzpicture}
 \end{slidebox}\end{frame}
 
 \begin{frame}\begin{slidebox}
-\mytitle{2.4.1 Basic model for claim frequency}
+\mytitle{Taking derivative using the chain rule}
  \begin{tikzpicture}[domain=0:2]
 \draw[blue, very thick] (0,0)  rectangle (14,6) ; 
 \end{tikzpicture}
 \end{slidebox}\end{frame}
 
 \begin{frame}\begin{slidebox}
-\mytitle{Reproductive property of the relative Poisson distribution}
+\mytitle{Evaluating each partial derivative}
  \begin{tikzpicture}[domain=0:2]
 \draw[blue, very thick] (0,0)  rectangle (14,6) ; 
 \end{tikzpicture}
@@ -411,260 +410,63 @@ cross/.default={3pt}}
 
 
 \begin{frame}\begin{slidebox}
-\mytitle{2.4.2 Basic model for claim severity}
+\mytitle{Remark: satured model}
  \begin{tikzpicture}[domain=0:2]
 \draw[blue, very thick] (0,0)  rectangle (14,6) ; 
 \end{tikzpicture}
 
-For both the frequency and the severity, the impact of the rating factors will be incorporated via $\mu_i$, using the theory of GLMs.
+Corresponding GLM overfits. However, it is useful in the definition of deviance.
+
 \end{slidebox}\end{frame}
 
 \begin{frame}\begin{slidebox}
-\mytitle{2.5 The basics of pricing with GLMs}
+\mytitle{Multiplicative Poisson frequency model}
+ \begin{tikzpicture}[domain=0:2]
+\draw[blue, very thick] (0,0)  rectangle (14,6) ; 
+\end{tikzpicture}
 
+\end{slidebox}\end{frame}
+
+
+\begin{frame}\begin{slidebox}
+\mytitle{Multiplicative gamma severity model}
+ \begin{tikzpicture}[domain=0:2]
+\draw[blue, very thick] (0,0)  rectangle (14,6) ; 
+\end{tikzpicture}
+
+\end{slidebox}\end{frame}
+
+
+\begin{frame}\begin{slidebox}
+\mytitle{Summary of Theoretical Results}
 \begin{itemize}
-    \item \highlight{Goal:} determine how key ratio $Y$ varies with rating factors
+    \item \highlight{Goal:} estimate the parameters of a GLM using MLE
     \pause
-    \item Q: Why not use multiple linear regression?
+    \item The $(r+1)$ equations:
+    \begin{equation*}
+      \sum_{i=1}^{n}w_{i}\frac{y_{i}-\mu_{i}}{v\left(  \mu_{i}\right)  g^{\prime
+      }\left(  \mu_{i}\right)  }x_{ij}=0\text{.} 
+    \end{equation*}
     \pause
-    \begin{itemize}
-        \item (A) Assumption of normally distributed error may not be reasonable, e.g., for nb of claims (which is discrete) or claim size (which is skewed and $>0$)
-        \pause
-        \item (B) modeling $Y$ as a linear (additive) fct of the rating factors clashes with our intuition to use a multiplicative model
-        \pause
-        \item (C) error term forced to have constant variance
-    \end{itemize}
+    \item For multiplicative Poisson frequency model:
+    \begin{equation*}
+      \sum_{i=1}^{n}w_{i} (y_{i}-\mu_{i}) x_{ij} = 0 \text{.}
+    \end{equation*}  
     \pause
-    \item \highlight{Advantages of GLM for pricing}
-    \pause
-    \begin{enumerate}
-        \item has theory that can be used to estimate std error, build CIs, do model selection
-        \pause
-        \item used in many areas, so can benefit for developments elsewhere
-        \pause
-        \item std software is available for fitting 
-    \end{enumerate}
+    \item For multiplicative gamma severity model:
+    \begin{equation*}
+      \sum_{i=1}^{n}w_{i}\frac{y_{i}-\mu_{i}}{\mu_{i}}x_{ij}=0\text{.} 
+    \end{equation*}
 \end{itemize}
 \end{slidebox}\end{frame}
 
 \begin{frame}\begin{slidebox}
-\mytitle{Quick review of GLMs}
- \begin{tikzpicture}[domain=0:2]
-\draw[blue, very thick] (0,0)  rectangle (14,6) ; 
-\end{tikzpicture}
-\end{slidebox}\end{frame}
-
-\begin{frame}\begin{slidebox}
-\mytitle{What is next}
-
-\begin{itemize}
-\item Next we discuss how \highlight{Exponential Dispersion Models (EDM)} can be used to address (A) (\grey{Assumption of normally distributed error may not be reasonable})
-in the context of non-life insurance pircing.
-\pause
-\item Then we'll review how the flexibility in choosing the \highlight{link function} can be used to address (B) (\grey{modeling $Y$ as a linear (additive) fct of the rating factors}) and allow us to use a multiplicative model
-\end{itemize}
-\end{slidebox}\end{frame}
-
-\begin{frame}\begin{slidebox}
-\mytitle{2.5.1 Exponential Dispersion Models}
- \begin{tikzpicture}[domain=0:2]
-\draw[blue, very thick] (0,0)  rectangle (14,6) ; 
-\end{tikzpicture}
-\end{slidebox}\end{frame}
-
-\begin{frame}\begin{slidebox}
-\mytitle{Recap of Week 6 -- Lecture 1}
-\begin{itemize}
-    \item \highlight{Basic claim frequency model}: use
-    $$
-\mathbb{P}\left(  Y_{i}=y_{i}\right)  =\frac{\left(  w_{i}\mu_{i}\right)
-^{w_{i}y_{i}}e^{-w_{i}\mu_{i}}}{k!}\text{,} \qquad y_{i}\in\left\{  0,\frac{1}{w_{i}},\frac{2}{w_{i}},...\right\}  
-$$
-\pause
-\item \highlight{Basic claim severity model}: use
-\begin{align*}
-f_{Y_{i}}\left(  y\right)   &  =\frac{\left(  \frac{\mu_{i}}{\xi_{i}}%
-w_{i}\right)  ^{\frac{w_{i}\left(  \mu_{i}\right)  ^{2}}{\xi_{i}}}%
-y^{\frac{w_{i}\left(  \mu_{i}\right)  ^{2}}{\xi_{i}}-1}e^{-\frac{w_{i}\mu_{i}%
-}{\xi}y}}{\Gamma\left(  \frac{w_{i}\left(  \mu_{i}\right)  ^{2}}{\xi_{i}%
-}\right)  }, \qquad y_i>0\nonumber\\
-\end{align*}
-
-\end{itemize}
-\end{slidebox}\end{frame}
-
-\begin{frame}\begin{slidebox}
-\mytitle{Recap of Week 6 -- Lecture 1}
-\begin{itemize}
-\item $Y_i$ is EDM if pdf/pmf given by 
-$$
-f_{Y_{i}}\left(  y_{i},\theta_{i},\phi\right)  =\exp\left\{  \frac{y_{i}%
-\theta_{i}-b\left(  \theta_{i}\right)  }{\frac{\phi}{w_{i}}}+c\left(
-y_{i},\phi,w_{i}\right)  \right\}  \text{,} \label{EDM}%
-$$
-\pause
-\item Forgot to provide notation $\eta = \beta_0 + \beta_1 x_{1}+\ldots + \beta_p x_p$ for the linear predictor
-\end{itemize}
-\end{slidebox}\end{frame}
-
-\begin{frame}\begin{slidebox}
-\mytitle{Additional properties of EDM}
- \begin{tikzpicture}[domain=0:2]
-\draw[blue, very thick] (0,0)  rectangle (14,6) ; 
-\end{tikzpicture}
-\end{slidebox}\end{frame}
-
-\begin{frame}\begin{slidebox}
-\mytitle{Checking that relative Poisson distribution is EDM}
- \begin{tikzpicture}[domain=0:2]
-\draw[blue, very thick] (0,0)  rectangle (14,6) ; 
-\end{tikzpicture}
-\end{slidebox}\end{frame}
-
-\begin{frame}\begin{slidebox}
-\mytitle{Checking that Gamma model is an EDM}
- \begin{tikzpicture}[domain=0:2]
-\draw[blue, very thick] (0,0)  rectangle (14,6) ; 
-\end{tikzpicture}
-\end{slidebox}\end{frame}
-
-\begin{frame}\begin{slidebox}
-\mytitle{Reproductive property of EDM family}
-
-\highlight{Result:} If $Y_1$ and $Y_2$ are two independent rv's from the same EDM family (i.e., same $b(\cdot)$, same $\mu$ and same $\phi$) but with possibly different weights $w_1$ and $w_2$ then $Y = \frac{w_1Y_1+w_2Y_2}{w_1+w_2}$ is in same EDM family but with weight $w_1+w_2$.
-\end{slidebox}\end{frame}
-
-\begin{frame}\begin{slidebox}
-\mytitle{2.5.2 Link Function}
-
-\begin{itemize}
- \item Previous topic helped us identify a rich class of models for $Y$ that are useful in the context of GLMs
- \pause
- \item The \highlight{link function} provides flexibility to model how the
-response (i.e., the key ratio $Y_{i}$) relates to the rating factors. 
-\pause
-\item  This is done by
-imposing a \highlight{relationship} between the mean response $\mathbb{E}\left[
-Y_{i}\right]  =\mu_{i}$ and the set of rating factors.
-\end{itemize}
-
-\end{slidebox}\end{frame}
-
-\begin{frame}\begin{slidebox}
-\mytitle{Example with one rating factor}
-\begin{itemize}
-    
-
-\item Consider a tariff model with \dg{only one rating factor} taking possible values
-$\left\{  a,b,c\right\}$.
-\pause
-\item One category will be the \dg{base category} for the rating factor (say,
-category $a$) and \highlight{2 binary variables} will be created to indicate \bl{whether the
-category is $b$ or not}, and \ora{whether the category is $c$ or not}. \pause Hence we get the linear predictor
-
-
-$$
-\eta_{i}=\beta_{0}+\bl{\beta_{1}}x_{i1}+\ora{\beta_{2}}x_{i2}\text{,}%
-$$
-where \bl{$x_{i1}=1$ if tariff cell $i$ has category $b$} for rating
-factor (or otherwise 0) and \ora{$x_{i2}=1$ if tariff cell $i$ has category $c$} for
-its rating factor (or otherwise 0). \pause Hence
-
-\begin{center}
-\begin{tabular}
-[c]{|ccc|}\hline
-\multicolumn{1}{|c|}{Tariff cell $i$} & Rating factor & $\eta_{i}%
-$\\\hline\hline
-\multicolumn{1}{|c|}{1} & $\left(  a\right)  $ & $\beta_{0}$\\
-\multicolumn{1}{|c|}{2} & $\left(  b\right)  $ & $\beta_{0}+\bl{\beta_{1}}$\\
-\multicolumn{1}{|c|}{3} & $\left(  c\right)  $ & $\beta_{0}+\ora{\beta_{2}}$\\\hline
-\end{tabular}
-\end{center}
-\end{itemize}
-\end{slidebox}\end{frame}
-
-\begin{frame}\begin{slidebox}
-
-
-\mytitle{Example with two rating factors}
-Consider now a tariff model with two rating factors:
-\pause
-\begin{itemize}
-\item \bl{Rating factor 1 takes on two possible values} $\left\{  a,b\right\}  $;
-\pause
-\item \ora{Rating factor 2 takes on three possible values} $\left\{  c,d,e\right\}
-$.
-\pause
-\item Create \bl{1 binary variable} for Rating
-factor 1 (assuming base category is $a$)
-\pause
-\item Create \ora{2 binary variables} for Rating factor 2 (assuming base category is $c$).
-\end{itemize}
-\pause
-Hence, we define
-$$
-\eta_{i}=\beta_{0}+\bl{\beta_{1}}x_{i1}+\ora{\beta_{2}}x_{i2}+\ora{\beta_{3}}x_{i3}\text{,}%
-$$
-\pause where
-
-\begin{itemize}
-\item \bl{$x_{i1}=1$} if tariff cell $i$ has category $b$ for its first rating
-factor (or otherwise 0);
-\pause
-\item \ora{$x_{i2}=1$} if tariff cell $i$ has category $d$ for its second rating
-factor (or otherwise 0)
-\pause
-\item \ora{$x_{i3}=1$} if tariff cell $i$ has category $e$ for its second rating
-factor (or otherwise 0)
-\end{itemize}
-\end{slidebox}\end{frame}
-
-\begin{frame}\begin{slidebox}
-
-
-\begin{center}
-\begin{tabular}
-[c]{|ccc|}\hline
-\multicolumn{1}{|c|}{Tariff cell $i$} & Rating factors & $\eta_{i}%
-$\\\hline\hline
-\multicolumn{1}{|c|}{1} & $\left(  a,c\right)  $ & $\beta_{0}$\\
-\multicolumn{1}{|c|}{2} & $\left(  a,\ora{d}\right)  $ & $\beta_{0}+\ora{\beta_{2}}$\\
-\multicolumn{1}{|c|}{3} & $\left(  a,\ora{e}\right)  $ & $\beta_{0}+\ora{\beta_{3}}$\\
-\multicolumn{1}{|c|}{4} & $\left(  \bl{b},c\right)  $ & $\beta_{0}+\bl{\beta_{1}}$\\
-\multicolumn{1}{|c|}{5} & $\left(  \bl{b},\ora{d}\right)  $ & $\beta_{0}+\bl{\beta_{1}}%
-+\ora{\beta_{2}}$\\
-\multicolumn{1}{|c|}{6} & $\left(  \bl{b},\ora{e}\right)  $ & $\beta_{0}+\bl{\beta_{1}}%
-+\ora{\beta_{3}}$\\\hline
-\end{tabular}
-\end{center}
-
-Vectors of binary variables corresponding to 6 rating cells:
-\begin{align*}
-\vec{x}_{1} &= (1,0,0,0) & \vec{x}_{4} &= (1,1,0,0)\\
-\vec{x}_{2} &= (1,0,1,0) & \vec{x}_{5} &= (1,1,1,0) \\
-\vec{x}_{3} &= (1,0,0,1) & \vec{x}_{6} &= (1,1,0,1)
-\end{align*}
-$X = [x_{ij}]_{i=1,j=1}^{4\,\,\,\,\,\,\,\,6}$ is the design matrix
-\end{slidebox}\end{frame}
-
-\begin{frame}\begin{slidebox}
-\begin{itemize}
-\item More generally,  for a rating factor with say $p$ categories,
-we shall create $\left(  p-1\right)  $ binary variables, each of which takes
-the value $1$ if tariff cell $i$ is in a given category and $0$, otherwise.
-\pause
-\item 
-One of the categories is assumed to be the base category which is why we
-create only $\left(  p-1\right)  $ binary variables. 
-\end{itemize}
-\end{slidebox}\end{frame}
-
-\begin{frame}\begin{slidebox}
-\mytitle{2.5.2 Link Function}
- \begin{tikzpicture}[domain=0:2]
-\draw[blue, very thick] (0,0)  rectangle (14,6) ; 
-\end{tikzpicture}
-\end{slidebox}\end{frame}
+  \mytitle{Example: Moped dataset}
+  
+  \begin{itemize}
+      \item \highlight{Goal:} Use everything we learned to build a GLM for the moped dataset.
+  \end{itemize}
+  \end{slidebox}\end{frame}
 
 \end{document}
 

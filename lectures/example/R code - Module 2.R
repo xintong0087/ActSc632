@@ -2,7 +2,7 @@
 
 ## command to indicate where to read the data file and store plots on your computer - please modify the path based on your own needs
 
-setwd('/Users/clemieux/cours/act632/s2017/code')
+setwd('C:/Users/X/Documents/GitHub/ActSc632/lectures/example')
 ## to read the moped insurance data and visualize the data
 
 moped<-read.csv("moped.csv",header=TRUE,sep=',')

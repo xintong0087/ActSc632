@@ -465,10 +465,144 @@ Corresponding GLM overfits. However, it is useful in the definition of deviance.
   
   \begin{itemize}
       \item \highlight{Goal:} Use everything we learned to build a GLM for the moped dataset.
+      \pause
+      \item \highlight{Tasks:}
+      \begin{enumerate}
+        \item Load the data
+        \pause
+        \item Explore the data
+        \pause
+        \item Set the base tariff cells
+        \pause
+        \item Fit the frequency model
+        \pause
+        \item Fit the severity model
+      \end{enumerate}
   \end{itemize}
-  \end{slidebox}\end{frame}
-
-\end{document}
+\end{slidebox}\end{frame}
 
 \begin{frame}\begin{slidebox}
+  \mytitle{Recap from Last Time}
+  
+  \begin{itemize}
+      \item   Estimating the parameters of a GLM using MLE
+      \pause
+      \item   Example in R: Moped dataset
+  \end{itemize}
 \end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+  \mytitle{Today}
+  
+  \begin{itemize}
+      \item Hypothesis testing for GLMs
+      \pause
+      \item Deviance statistic: likelihood ratio test 
+      \pause
+      \item Pearson's chi-squared test
+      \pause
+      \item Estimating the dispersion parameter $\phi$
+      \pause
+      \item Testing hierarchical models
+      \pause
+      \item Confidence intervals based on Fisher's information
+  \end{itemize}
+\end{slidebox}\end{frame}
+
+
+\begin{frame}\begin{slidebox}
+  \mytitle{2.7 GLM Model Building}
+  \begin{tikzpicture}[domain=0:2]
+  \draw[blue, very thick] (0,0)  rectangle (14,6) ; 
+  \end{tikzpicture}
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+  \mytitle{Deviance Statistic from Likelihood Ratio Test}
+  \begin{tikzpicture}[domain=0:2]
+  \draw[blue, very thick] (0,0)  rectangle (14,6) ; 
+  \end{tikzpicture}
+\end{slidebox}\end{frame}
+
+
+\begin{frame}\begin{slidebox}
+  \mytitle{Deviance Statistic from Likelihood Ratio Test}
+  Null hypothesis: 
+  $$H_0: \text{fitted GLM model} $$
+  \pause
+  Test Statistic:
+  \begin{equation*}
+    D^* = 2 \{ l(y_1, \dots, y_n;, \bm{\theta}, \phi) - l(\hat{\mu}_1, \dots, \hat{\mu}_n;, \bm{\theta}, \phi)\}\text{.} 
+  \end{equation*}
+  \pause
+  Under general conditions, the deviance statistic $D^*$ is approximately chi-squared distributed with $n-p$ degrees of freedom, where 
+  \begin{itemize}
+    \item  $n$ is the number of observations,
+    \item  and $p = r + 1$ is the number of parameters in the model.
+  \end{itemize}
+  \pause
+  Compare the deviance statistic with $c_{1-\alpha}$, 
+  \begin{itemize}
+    \item  $c_{1-\alpha}$ is the $1-\alpha$ quantile of the chi-squared distribution with $n-p$ degrees of freedom.
+    \item  Reject if $D^* > c_{1-\alpha}$, accept otherwise.
+  \end{itemize}
+  \pause
+  Using $p$-values, reject if $p$-value $< \alpha$, accept otherwise.
+
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+  \mytitle{Pearson's Goodness-of-Fit Test}
+  Null hypothesis: $H_0:$ fitted GLM model
+  \begin{equation*}
+    X^2 = \sum_{i=1}^n \frac{(y_i - \hat{\mu}_i)^2}{\text{Var}(Y_i)} = \frac{1}{\phi} \sum_{i=1}^n w_i \frac{(y_i - \hat{\mu}_i)^2}{\nu(\hat{\mu}_i)} \text{.} 
+  \end{equation*}
+  $X^2$ is approximately chi-squared distributed with $n - (r+1)$ degrees of freedom.
+  \pause
+  Compare the Pearson test statistic with $c_{1-\alpha}$, 
+  \begin{itemize}
+    \item  $c_{1-\alpha}$ is the $1-\alpha$ quantile of the chi-squared distribution with $n-p$ degrees of freedom.
+    \item  Reject if $X^2 > c_{1-\alpha}$, accept otherwise.
+  \end{itemize}
+  \pause
+  Using $p$-values, reject if $p$-value $< \alpha$, accept otherwise.
+
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+  \mytitle{Estimation of $\phi$}
+  \begin{tikzpicture}[domain=0:2]
+  \draw[blue, very thick] (0,0)  rectangle (14,6) ; 
+  \end{tikzpicture}
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+  \mytitle{Testing Hierarchical Models}
+  Consider two models $M_s \subset M_t$:
+  \begin{align*}
+    & H_0: \text{ data comes from } M_s \\
+    & H_\alpha: \text{ data comes from the more complicated } M_t 
+  \end{align*}
+  \pause
+  Test statistic:
+  \begin{equation*}
+    D^*(\mathbf{y}, \hat{\mu}^{(s)}) - D^*(\mathbf{y}, \hat{\mu}^{(t)}) \text{.}
+  \end{equation*}
+  \pause
+  \begin{itemize}
+    \item   $M_s$ and $M_t$ are required to be from the same EDM family.
+    \pause
+    \item   $D^*(\mathbf{y}, \hat{\mu}^{(s)}) - D^*(\mathbf{y}, \hat{\mu}^{(t)})$ is approximately chi-squared distributed with $p_t - p_s$ degrees of freedom.
+    \pause
+    \item   Using $p$-values, reject if $p$-value $< \alpha$, accept otherwise.
+  \end{itemize}
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+  \mytitle{Confidence intervals based on Fisher’s information}
+  \begin{tikzpicture}[domain=0:2]
+  \draw[blue, very thick] (0,0)  rectangle (14,6) ; 
+  \end{tikzpicture}
+\end{slidebox}\end{frame}
+
+\end{document}

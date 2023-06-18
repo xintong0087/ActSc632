@@ -1,4 +1,4 @@
-\documentclass[aspectratio=169,professionalfonts,mathserif,handout]{beamer}
+\documentclass[aspectratio=169,professionalfonts,mathserif]{beamer}
 
 \usepackage{pgf,tikz}
 \usetikzlibrary{arrows,automata}
@@ -547,7 +547,7 @@ Corresponding GLM overfits. However, it is useful in the definition of deviance.
     \item  Reject if $D^* > c_{1-\alpha}$, accept otherwise.
   \end{itemize}
   \pause
-  Using $p$-values, reject if $p$-value $< \alpha$, accept otherwise.
+  Using \textcolor{blue}{$p$-values, reject if $p$-value $< \alpha$, accept otherwise}.
 
 \end{slidebox}\end{frame}
 
@@ -565,15 +565,28 @@ Corresponding GLM overfits. However, it is useful in the definition of deviance.
     \item  Reject if $X^2 > c_{1-\alpha}$, accept otherwise.
   \end{itemize}
   \pause
-  Using $p$-values, reject if $p$-value $< \alpha$, accept otherwise.
+  Using $p$-values, \textcolor{blue}{reject if $p$-value $< \alpha$, accept otherwise}.
 
 \end{slidebox}\end{frame}
 
 \begin{frame}\begin{slidebox}
   \mytitle{Estimation of $\phi$}
-  \begin{tikzpicture}[domain=0:2]
-  \draw[blue, very thick] (0,0)  rectangle (14,6) ; 
-  \end{tikzpicture}
+  \begin{itemize}
+    \item \textbf{Method 1}: Matching moments with the Pearson statistic
+    \begin{equation*}
+      \hat{\phi} = \frac{1}{n-(r+1)} \sum_{i=1}^n w_i \frac{(y_i - \hat{\mu}_i)^2}{\nu(\hat{\mu}_i)} \text{.} 
+    \end{equation*}
+    where we set $X^2 = n - (r+1)$ by matching the expected value of $X^2$
+    \begin{equation*}
+      \mathbb{E}[X^2] = n - (r+1) \text{.}
+    \end{equation*}
+    \pause
+    \item \textbf{Method 2}: Matching moments with the deviance statistic
+    \begin{equation*}
+      \hat{\phi}_D = \frac{D}{n-(r+1)} \text{.}
+    \end{equation*}
+    where we set $D^* = n - (r+1)$ by matching the expected value of $D^*$
+  \end{itemize}
 \end{slidebox}\end{frame}
 
 \begin{frame}\begin{slidebox}
@@ -592,17 +605,70 @@ Corresponding GLM overfits. However, it is useful in the definition of deviance.
   \begin{itemize}
     \item   $M_s$ and $M_t$ are required to be from the same EDM family.
     \pause
-    \item   $D^*(\mathbf{y}, \hat{\mu}^{(s)}) - D^*(\mathbf{y}, \hat{\mu}^{(t)})$ is approximately chi-squared distributed with $p_t - p_s$ degrees of freedom.
+    \item   $D^*(\mathbf{y}, \hat{\mu}^{(s)}) - D^*(\mathbf{y}, \hat{\mu}^{(t)})$ is \textcolor{blue}{approximately chi-squared distributed with $p_t - p_s$ degrees of freedom}.
     \pause
-    \item   Using $p$-values, reject if $p$-value $< \alpha$, accept otherwise.
+    \item   Using $p$-values, \textcolor{blue}{reject if $p$-value $< \alpha$}, accept otherwise.
   \end{itemize}
 \end{slidebox}\end{frame}
 
 \begin{frame}\begin{slidebox}
   \mytitle{Confidence intervals based on Fisher’s information}
-  \begin{tikzpicture}[domain=0:2]
-  \draw[blue, very thick] (0,0)  rectangle (14,6) ; 
-  \end{tikzpicture}
+  To get the confidence intervals, we need the Fisher's information matrix:
+  \begin{equation*}
+    [I]_{jk} = - \mathbb{E} \left[ \frac{\partial^2 \ell}{\partial \beta_j \partial \beta_k} \right], \;\;\;\;\;\; j,k = 0,1, \dots, r \text{.}
+  \end{equation*}
+  \pause
+  It can be shown that $I = X^T D X$, where $D$ is a diagonal matrix with diagonal elements
+  \begin{equation*}
+    d_i = \frac{w_i}{\phi(\hat{\mu}_i)(g'(\hat{\mu}_i)^2)}  \text{.}
+  \end{equation*}
+  \pause
+  Asymptotically, we have $\hat{\beta} \sim N(\beta, I^{-1})$. 
+  Thus we can find the \textcolor{blue}{confidence intervals for $\beta_j$}:
+  \begin{equation*}
+    \hat{\beta}_j \pm z_{1-\alpha/2} \sqrt{[I^{-1}]_{jj}} \text{.}
+  \end{equation*}
+  where $z_{1-\alpha/2}$ is the $(1-\alpha/2)$-quantile of the standard normal distribution.
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+  \mytitle{Confidence intervals based on Fisher’s information}
+  In practice, we also want to find the confidence intervals for $\mu_i$. \\
+  \vspace{20pt}
+  \pause
+  We do this by finding the \textcolor{blue}{confidence intervals for $\eta_i$}:
+  \begin{equation*}
+    \hat{\eta}_i \pm z_{1-\alpha/2} \sqrt{[I_\eta^{-1}]_{jj}} \text{.}
+  \end{equation*}
+  where $I_\eta^{-1} = (x_{i0}, x_{i1}, \dots x_{ir}) I^{-1} (x_{i0}, x_{i1}, \dots x_{ir})^T$ is the variance of $\hat{\eta}_i$. \\
+  \vspace{20pt}
+  \pause
+  Then we can find the \textcolor{blue}{confidence intervals for $\mu_i$}:
+  \begin{equation*}
+    (e^{\hat{\eta}_i - z_{1-\alpha/2} \sqrt{[I_\eta^{-1}]_{jj}}}, e^{\hat{\eta}_i + z_{1-\alpha/2} \sqrt{[I_\eta^{-1}]_{jj}}}) \text{.}
+  \end{equation*}
+\end{slidebox}\end{frame}
+
+\begin{frame}\begin{slidebox}
+  \mytitle{Example: Moped dataset}
+  
+  \begin{itemize}
+      \item \highlight{Goal:} Test our built GLM for the moped dataset.
+      \pause
+      \item \highlight{Tasks:}
+      \begin{enumerate}
+        \item   Test the frequency model using deviance test using its $p$-value.
+        \item   Test the severity model using deviance test using its $p$-value.
+        \item   Test the frequency model using Pearson's chi-squared test using its $p$-value.
+        \item   Test the severity model using Pearson's chi-squared test using its $p$-value.
+        \item   Estimate $\phi$ for the severity model.
+        \item   Combine zone 5, 6, 7 into zone 4. Fit a new frequency model with the new zone 4.
+        \item   Test the new frequency model against the previous one.
+        \item   Repeat step 6 and 7 for the severity model.
+        \item   Find the $95\%$ confidence intervals for the parameters and the relativities of the frequency model.
+        \item   Repeat step 9 for the severity model.
+      \end{enumerate}
+  \end{itemize}
 \end{slidebox}\end{frame}
 
 \end{document}

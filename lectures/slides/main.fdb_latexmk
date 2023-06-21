@@ -1,6 +1,6 @@
 # Fdb version 3
-["pdflatex"] 1687100343 "/Users/xintong0079/Documents/GitHub/ActSc632/lectures/slides/main.tex" "main.pdf" "main" 1687100344
-  "/Users/xintong0079/Documents/GitHub/ActSc632/lectures/slides/main.tex" 1687100337 21356 6877508ea867b5c34dd50ebeaf8e4376 ""
+["pdflatex"] 1687266517 "/Users/xintong0079/Documents/GitHub/ActSc632/lectures/slides/main.tex" "main.pdf" "main" 1687266525
+  "/Users/xintong0079/Documents/GitHub/ActSc632/lectures/slides/main.tex" 1687266520 21358 8dfe42aa1132ab5d300621870b0a85af ""
   "/usr/local/texlive/2022/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/local/texlive/2022/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/local/texlive/2022/texmf-dist/fonts/tfm/adobe/helvetic/phvb8r.tfm" 1136768653 4484 b828043cbd581d289d955903c1339981 ""
@@ -297,10 +297,10 @@
   "/usr/local/texlive/2022/texmf.cnf" 1647878952 577 209b46be99c9075fd74d4c0369380e8c ""
   "UWlogo-eps-converted-to.pdf" 1686953498 24313 1df016fdd5b47e2aa9d569e75044fe0d ""
   "UWlogo.eps" 0 -1 0 ""
-  "main.aux" 1687100344 3937 cad1f645e5b788a08013c56c83e61c49 "pdflatex"
-  "main.nav" 1687100344 2251 88ea64c7fa25f43f5174bd255000c60d "pdflatex"
+  "main.aux" 1687266525 3937 cad1f645e5b788a08013c56c83e61c49 "pdflatex"
+  "main.nav" 1687266525 2251 88ea64c7fa25f43f5174bd255000c60d "pdflatex"
   "main.out" 0 -1 0 "pdflatex"
-  "main.tex" 1687100337 21356 6877508ea867b5c34dd50ebeaf8e4376 ""
+  "main.tex" 1687266520 21358 8dfe42aa1132ab5d300621870b0a85af ""
   (generated)
   "main.aux"
   "main.log"

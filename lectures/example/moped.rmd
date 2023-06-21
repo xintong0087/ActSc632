@@ -1,0 +1,186 @@
+# ActSc 632 Moped Example
+##### Spring 2023
+##### Department of Statistics and Actuarial Science, University of Waterloo
+
+## Load and Visualizing Data
+```{r}
+library(insuranceData)
+library(foreach)
+library(dplyr)
+library(tibble)
+
+options(tibble.print_max = Inf)
+
+data(dataOhlsson)
+moped <- read.csv("/Users/xintong0079/Documents/GitHub/ActSc632/lectures/example/moped.csv", header=TRUE, sep=',')
+moped
+```
+
+```{r}
+moped <- within(moped, {class <- factor(class)
+                        age <- factor(age)
+                        zone <- factor(zone)})
+
+levels(moped$class)
+levels(moped$age)
+levels(moped$zone)
+```
+
+There are 3 levels for class, 3 levels for age, and 7 levels for zone.
+
+```{r}
+basecell <- moped[which.max(moped[, 4]),1:3]
+moped$class <- relevel(moped$class, as.character(basecell$class))
+moped$age <- relevel(moped$age, as.character(basecell$age))
+moped$zone <- relevel(moped$zone, as.character(basecell$zone))
+```
+
+The base cell is usually the cell with the highest duration. We relevel the factors so that the base cell is the reference cell.
+
+### dataOhlsson
+1. In dataOhlsson, we will need to following the same steps as above to make the categorical variable into factors.
+2. Don't forget to relevel the factors so that the base cell is the reference cell.
+3. Check the tariff table on the second page for how the age variable "fordald" is grouped into 2 levels.
+4. Check how the "bonuskl" variable is grouped into 3 levels.
+
+## Getting the tariff table
+Different from the moped dataset, we will need to combine the information from the dataOhlsson dataset to get the tariff table.
+- For each rating factor, sum up the durations, n.claims, and total cost premium.
+- Calculate the average claim cost for each rating factor from the total cost premium and n.claims.
+- Create binary variables for each rating factor (using contrasts and contract treatment coding).
+
+## Fitting the GLMs
+```{r}
+summary(freq<-glm(number ~ class + age + zone + offset(log(duration)), data = moped[moped$duration>0,], family=poisson("log")))
+
+cbind(scaled.deviance=freq$deviance,df=freq$df.residual, p=1-pchisq(freq$deviance, freq$df.residual))
+```
+What do you think about the model based on the p-value?
+
+### dataOhlsson
+In the moped dataset, everything is already in the right format. We will need to reformat the data from the dataOhlsson dataset.
+
+1. Create a new dataframe using "groupby" and "summarize".
+
+    - "groupby" takes in the rating factors, it groups the data by different values of rating factor combinations.
+    - "summarize" takes in the variables that we want to summarize, it calculates the sum of the variables for each group.
+
+        - more specifically, it calculates the sum of the variables for each combination of rating factors (duration, n.claims, and claim cost).
+
+2. Fit the GLM using the new dataframe.
+
+3. Examine the fitted model using deviance statistics and the corresponding p-value.
+
+4. Get the confidence intervals for the coefficients and the tariff cells.
+
+```{r}
+P.class <- contrasts(moped$class)
+P.age <- contrasts(moped$age)
+P.zone <- contrasts(moped$zone)
+
+mat.freq <- summary(freq)$coefficients[, 1:2]
+
+table <- matrix(0, nrow = nlevels(moped$class) + nlevels(moped$age) + nlevels(moped$zone) + 1, ncol = 5)
+colnames(table) <- c("Rating Factor", "Level", "Multiplier", "Lower Bound", "Upper Bound")
+
+print(P.class)
+print(P.age)
+print(P.zone)
+```
+
+You can also rank the classes by duration, the above matrix is the reference matrix to the base cell what we have set previously.
+
+Let's now fill in the table.
+
+#### Intercept
+```{r}
+estimate = mat.freq[1, 1]
+std.error = mat.freq[1, 2]
+table[1, ] = c("Intercept", "0", exp(estimate), exp(estimate - 1.96 * std.error), exp(estimate + 1.96 * std.error))
+```
+
+#### Class
+```{r}
+estimate = P.class %*% mat.freq[2, 1]
+std.error = P.class %*% mat.freq[2, 2]
+
+table[2:3, ] = cbind(rep("Class", 2), seq(2), exp(estimate), exp(estimate - 1.96 * std.error), exp(estimate + 1.96 * std.error))
+```
+
+#### Age
+```{r}
+estimate = P.age %*% mat.freq[3, 1]
+std.error = P.age %*% mat.freq[3, 2]
+
+table[4:5, ] = cbind(rep("Age", 2), seq(2), exp(estimate), exp(estimate - 1.96 * std.error), exp(estimate + 1.96 * std.error))
+```
+
+#### Zone
+```{r}
+estimate = P.zone %*% mat.freq[4:9, 1]
+std.error = P.zone %*% mat.freq[4:9, 2]
+
+table[6:12, ] = cbind(rep("Zone", 7), seq(7), exp(estimate), exp(estimate - 1.96 * std.error), exp(estimate + 1.96 * std.error))
+```
+
+Here is our final tariff table.
+
+```{r}
+as_tibble(table)
+```
+
+For the severity table, follow the same approach as above. The only difference is the model that we are fitting. I will skip the steps here.
+
+## Comparing two models
+
+- After the new model is fitted, you will need to use the deviance test to compare the two models using the p-value.
+
+- The degree of freedom of the chi-square distribution is the difference between df of the two models.
+
+- To access the df of the model, use the following code:
+
+```{r}
+freq$df.residual
+```
+
+## Combine your multiplier estimates from the frequency and severity data 
+
+To get multipliers (and associated 95% confidence intervals) for the premium overall, we can combine the multipliers from the frequency and severity data.
+
+```{r, eval=FALSE}
+table <- matrix(0, nrow = nlevels(moped$class) + nlevels(moped$age) + nlevels(moped$zone) + 1, ncol = 5)
+colnames(table) <- c("Rating Factor", "Level", "Multiplier", "Lower Bound", "Upper Bound")
+
+estimate.freq <- mat.freq[1, 1]
+std.error.freq <- mat.freq[1, 2]
+estimate.sev = mat.sev[1, 1]
+std.error.sev = mat.sev[1, 2]
+
+table[1, ] <- c("Intercept", "0", exp(estimate.freq + estimate.sev), 
+                exp(estimate.freq + estimate.sev - 1.96 * sqrt(std.error.freq^2 + std.error.sev^2)), 
+                exp(estimate.freq + estimate.sev + 1.96 * sqrt(std.error.freq^2 + std.error.sev^2)))
+
+estimate.freq = P.class %*% mat.freq[2, 1]
+std.error.freq = P.class %*% mat.freq[2, 2]
+estimate.sev = P.class %*% mat.sev[2, 1]
+std.error.sev = P.class %*% mat.sev[2, 2]
+table.q6[2:3, ] = cbind(rep("Vehicle class", 2), seq(2), exp(estimate.freq + estimate.sev), 
+                   exp(estimate.freq + estimate.sev - 1.96 * sqrt(std.error.freq^2 + std.error.sev^2)), 
+                   exp(estimate.freq + estimate.sev + 1.96 * sqrt(std.error.freq^2 + std.error.sev^2)))
+
+# Other details are omitted here
+```
+
+To get the estimate and confidence interval for the overall tariff, we combine the multiplier estimates from the frequency and severity data.
+
+1. Get the point estimates and standard errors from the frequency and severity data.
+2. Combine the point estimates by adding them together.
+    - adding in the exponent scale is equivalent to multiplying in the original scale.
+3. Combine the standard errors from independence assumptions.
+    $$\text{Variance}(Z) = \text{Variance}(Z_1) + \text{Variance}(Z_2)$$
+    Thus, we have
+    $$\sigma (Z) = \sqrt{\sigma (Z_1)^2 + \sigma (Z_2)^2}$$
+4. Derive the point estimates and the confidence intervals for the overall tariff by exponentiating the combined point estimates and standard errors.
+
+## Good Luck on Your Assignment!
+

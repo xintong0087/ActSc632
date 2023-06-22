@@ -45,8 +45,11 @@ The base cell is usually the cell with the highest duration. We relevel the fact
 
 ## Getting the tariff table
 Different from the moped dataset, we will need to combine the information from the dataOhlsson dataset to get the tariff table.
+
 - For each rating factor, sum up the durations, n.claims, and total cost premium.
+
 - Calculate the average claim cost for each rating factor from the total cost premium and n.claims.
+
 - Create binary variables for each rating factor (using contrasts and contract treatment coding).
 
 ## Fitting the GLMs

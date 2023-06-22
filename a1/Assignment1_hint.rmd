@@ -394,4 +394,3 @@ do not necessarily correspond to the original numbering, for these 3 particular 
 the same as in the original ordering) do not seem to be significant, and should therefore probably
 be combined with the baseline of Zone 4. Finally, we should explore the use of models other than
 the gamma distribution for the severity, to see if a better fit can be obtained.
-5

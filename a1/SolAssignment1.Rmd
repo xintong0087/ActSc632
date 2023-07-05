@@ -1,0 +1,390 @@
+# ActSc 632 Assignment 1 Solutions
+##### Spring 2023
+##### Department of Statistics and Actuarial Science, University of Waterloo
+
+```{r}
+# Install the packages if necessary
+# install.packages("insuranceData")
+# install.packages("doParallel")
+# install.packages("dplyr")
+# install.packages("tibble")
+
+library(insuranceData)
+library(foreach)
+library(dplyr)
+library(tibble)
+
+options(tibble.print_max = Inf)
+```
+
+## Question 1
+Download the data set dataOhlsson and briefly discuss the data found in there (e.g., how many
+rating factors, what are the levels for each, how is the exposure determined, etc.). If there are
+any problems with the data, explain how you dealt with them.
+
+#### Solution:
+
+As stated in the R documentation for this dataset:
+
+> The data for this case study comes from the former Swedish insurance company Wasa,
+and concerns partial casco insurance, for motorcycles this time. It contains aggregated
+data on all insurance policies and claims during 1994-1998; the reason for using this
+rather old data set is confidentiality; more recent data for ongoing business can not be
+disclosed.
+
+```{r}
+# Load the data
+data(dataOhlsson)
+
+# change categorical columns into factors
+dataOhlsson <- within(dataOhlsson, {
+    zon <- factor(zon)
+    mcklass <- factor(mcklass)
+    bonuskl <- factor(bonuskl)
+    kon <- factor(kon)})
+
+# regroup the column bonuskl into 3 levels
+levels(dataOhlsson$bonuskl) <- list("1" = c("1","2"),
+                                    "2" = c("3","4"),
+                                    "3" = c("5","6","7"))  
+
+# regroup the column mcklass into 3 levels
+# For details, visit: https://stackoverflow.com/questions/13559076/group-numeric-values-by-the-intervals
+dataOhlsson$motorage_gr <- cut(dataOhlsson$fordald, 
+                               breaks = c(0, 2, 5, 100), 
+                               labels = c("1", "2", "3"), 
+                               right = FALSE)
+
+summary(dataOhlsson)
+```
+
+In this data set we have 6 rating factors given by agarald (age of driver),which goes from 0 to
+99, kon (sex of driver), either M (male) or K (female), zon (geographical zone, going from 1 to 7,
+generally going from more to less urban), mcklass (class of the vehicle, with 7 possible classes, as
+determined by the EV ratio of engine power to vehicle weight), fordald (age of vehicle, a numerical
+value between 0 and 99), bonuskl (bonus class based on experience, going from 1 to 7: a new
+driver starts with bonus class 1; for each claim-free year the bonus class is increased by 1; after
+the first claim the bonus is decreased by 2; the driver can not return to class 7 with less than 6
+consecutive claim free years). There are 64548 observations in this data set, with one for each
+driver observed. We see that for some observations the duration is 0. The exposure (or duration)
+is determined using policy-years, i.e., how long the contract was in effect for each driver. For
+each observation we also have the number of claims (antskad) and the claim cost (skadkost).
+
+## Question 2
+Use only the rating factors contained in the current tariff. Compute the exposure (in policy
+years), the claim frequency and the average claim severity for each rating factor (i.e., for each
+possible value of each rating factor).
+
+#### Solution:
+```{r}
+motorcycle <- data.frame(rating.factor = c(rep("Zone", nlevels(dataOhlsson$zon)),
+                                           rep("Vehicle class", nlevels(dataOhlsson$mcklass)),
+                                           rep("Vehicle age", nlevels(dataOhlsson$motorage_gr)),
+                                           rep("Bonus class", nlevels(dataOhlsson$bonuskl))),
+                         class = c(levels(dataOhlsson$zon),
+                                   levels(dataOhlsson$mcklass),
+                                   levels(dataOhlsson$motorage_gr),
+                                   levels(dataOhlsson$bonuskl)),
+                         stringsAsFactors = FALSE)
+
+new.cols <- foreach (rating.factor = c("zon","mcklass","motorage_gr","bonuskl"), .combine = rbind) %do% {
+                nclaims <- tapply(dataOhlsson$antskad,dataOhlsson[[rating.factor]], sum)
+                sums <- tapply(dataOhlsson$duration, dataOhlsson[[rating.factor]],sum)
+                severity <- tapply(dataOhlsson$skadkost,dataOhlsson[[rating.factor]],sum)
+                n.levels <- nlevels(dataOhlsson[[rating.factor]])
+                contrasts(dataOhlsson[[rating.factor]]) <-
+                    contr.treatment(n.levels)[rank(-sums, ties.method = "first"), ]
+                data.frame(duration = sums, n.claims = nclaims, totcostperm = severity/1000)}
+
+motorcycle <- cbind(motorcycle, new.cols)
+rm(new.cols)
+
+```
+After grouping the classes for the vehicle age into 3 groups (0-2, 3-5, 6 and up) and
+the bonus class into three groups (1-2,3-4,5-7) we get
+```{r}
+motorcycle
+```
+
+## Question 3
+Use a relative Poisson glm to determine relativities for the claim frequency, using the current
+rating factors. Provide a 95% confidence interval for each relativity. Comment on the overall fit
+of this model to the data.
+
+#### Solution:
+```{r}
+# Group the data by rating factors
+grDataOhlsson <- dataOhlsson %>% group_by(bonuskl, zon, mcklass, motorage_gr) %>% summarize(duration = sum(duration), 
+                                                                                            antskad=sum(antskad),
+                                                                                            skadkost=sum(skadkost))
+
+# Fit the Poisson GLM
+model.freq <- glm(antskad ~ zon + mcklass + motorage_gr + bonuskl + offset(log(duration)), 
+                  family = poisson, 
+                  data = grDataOhlsson[grDataOhlsson$duration>0,])
+
+# Examine model fit
+with(model.freq, cbind(res.deviance = deviance, 
+                       df = df.residual, 
+                       p = pchisq(deviance, df.residual, lower.tail = FALSE)))
+```
+
+With a deviance of $360.2168$ on $389$ degrees of freedom, the model seems a reasonable fit (p-value of $0.8495$).
+
+```{r}
+# Generate the table for relative frequency
+P.zon = contrasts(dataOhlsson$zon)
+P.mcklass = contrasts(dataOhlsson$mcklass)
+P.motorage_gr = contrasts(dataOhlsson$motorage_gr)
+P.bonuskl = contrasts(dataOhlsson$bonuskl)
+
+mat.freq = summary(model.freq)$coefficients[, 1:2]
+
+table.q3 = matrix(0, nrow = dim(motorcycle)[1] + 1, ncol = 5)
+colnames(table.q3) = c("Rating factor", "Class", "Multiplier", "Lower bound", "Upper bound")
+
+# Intercept
+estimate = mat.freq[1, 1]
+std.error = mat.freq[1, 2]
+table.q3[1, ] = c("Intercept", "0", exp(estimate), exp(estimate - 1.96 * std.error), exp(estimate + 1.96 * std.error))
+
+# Zone
+estimate = P.zon %*% mat.freq[2:7, 1]
+std.error = P.zon %*% mat.freq[2:7, 2]
+table.q3[2:8, ] = cbind(rep("Zone", 7), seq(7), exp(estimate), exp(estimate - 1.96 * std.error), exp(estimate + 1.96 * std.error))
+
+# Vehicle class
+estimate = P.mcklass %*% mat.freq[8:13, 1]
+std.error = P.mcklass %*% mat.freq[8:13, 2]
+table.q3[9:15, ] = cbind(rep("Vehicle class", 7), seq(7), exp(estimate), exp(estimate - 1.96 * std.error), exp(estimate + 1.96 * std.error))
+
+# Vehicle age
+estimate = P.motorage_gr %*% mat.freq[14:15, 1]
+std.error = P.motorage_gr %*% mat.freq[14:15, 2]
+table.q3[16:18, ] = cbind(rep("Vehicle age", 3), seq(3), exp(estimate), exp(estimate - 1.96 * std.error), exp(estimate + 1.96 * std.error))
+
+# Bonus class
+estimate = P.motorage_gr %*% mat.freq[16:17, 1]
+std.error = P.motorage_gr %*% mat.freq[16:17, 2]
+table.q3[19:21, ] = cbind(rep("Bonus class", 3), seq(3), exp(estimate), exp(estimate - 1.96 * std.error), exp(estimate + 1.96 * std.error))
+
+as_tibble(table.q3)
+```
+
+Note that I also accepted answers based on the quasi-Poisson family where a dispersion parameter is estimated, causing the CIs to be different from the above.
+
+## Question 4
+Use a Gamma glm (with log link function) to determine relativities for the severity, still using
+the current rating factors. Provide a 95% confidence interval for each relativity. Comment on
+the overall fit of this model to the data.
+
+#### Solution:
+```{r}  
+
+model.sev <- glm(skadkost/antskad ~ zon + mcklass + motorage_gr + bonuskl, 
+                 family=Gamma("log"), 
+                 data=grDataOhlsson[grDataOhlsson$skadkost>0,],
+                 weights=antskad)
+
+with(model.sev, cbind(res.deviance = deviance, 
+                      df = df.residual, 
+                      p = pchisq(deviance, df.residual, lower.tail = FALSE)))
+```
+
+The severity model doesn’t seem to be a very good fit. We reject the hypothesis that the data comes from this model based on the residual deviance, given by $351$ on $164$ degrees of freedom, as its corresponding p-value is $1.13842 \times 10^{-15}$.
+
+```{r}
+# Generate the table for relative severity
+mat.sev = summary(model.sev)$coefficients[, 1:2]
+
+table.q4 = matrix(0, nrow = dim(motorcycle)[1] + 1, ncol = 5)
+colnames(table.q4) = c("Rating factor", "Class", "Multiplier", "Lower bound", "Upper bound")
+
+# Intercept
+estimate = mat.sev[1, 1]
+std.error = mat.sev[1, 2]
+table.q4[1, ] = c("Intercept", "0", exp(estimate), exp(estimate - 1.96 * std.error), exp(estimate + 1.96 * std.error))
+
+# Zone
+estimate = P.zon %*% mat.sev[2:7, 1]
+std.error = P.zon %*% mat.sev[2:7, 2]
+table.q4[2:8, ] = cbind(rep("Zone", 7), seq(7), exp(estimate), exp(estimate - 1.96 * std.error), exp(estimate + 1.96 * std.error))
+
+# Vehicle class
+estimate = P.mcklass %*% mat.sev[8:13, 1]
+std.error = P.mcklass %*% mat.sev[8:13, 2]
+table.q4[9:15, ] = cbind(rep("Vehicle class", 7), seq(7), exp(estimate), exp(estimate - 1.96 * std.error), exp(estimate + 1.96 * std.error))
+
+# Vehicle age
+estimate = P.motorage_gr %*% mat.sev[14:15, 1]
+std.error = P.motorage_gr %*% mat.sev[14:15, 2]
+table.q4[16:18, ] = cbind(rep("Vehicle age", 3), seq(3), exp(estimate), exp(estimate - 1.96 * std.error), exp(estimate + 1.96 * std.error))
+
+# Bonus class
+estimate = P.motorage_gr %*% mat.sev[16:17, 1]
+std.error = P.motorage_gr %*% mat.sev[16:17, 2]
+table.q4[19:21, ] = cbind(rep("Bonus class", 3), seq(3), exp(estimate), exp(estimate - 1.96 * std.error), exp(estimate + 1.96 * std.error))
+
+as_tibble(table.q4)
+```
+
+
+## Question 5
+Assess whether rating factors for the policyholder’s age and sex would have a significant impact.
+Include an interaction term. You should group the age factor into intervals of 0-30 and 30-100. 
+
+#### Solution:
+```{r}
+dataOhlsson$driverage_gr <- cut(dataOhlsson$agarald, 
+                                breaks = c(0, 30,100), 
+                                labels = c("1", "2"), 
+                                right = FALSE)
+
+motorcycle.new <-
+    data.frame(rating.factor = c(rep("Bonus class", nlevels(dataOhlsson$bonuskl)),
+                                 rep("Vehicle class", nlevels(dataOhlsson$mcklass)),
+                                 rep("Vehicle age", nlevels(dataOhlsson$motorage_gr)),
+                                 rep("Zone", nlevels(dataOhlsson$zon)),
+                                 rep("Driver age", nlevels(dataOhlsson$driverage_gr)),
+                                 rep("Sex", nlevels(dataOhlsson$kon))),
+               class = c(levels(dataOhlsson$bonuskl),
+                         levels(dataOhlsson$mcklass),
+                         levels(dataOhlsson$motorage_gr),
+                         levels(dataOhlsson$zon),
+                         levels(dataOhlsson$driverage_gr),
+                         levels(dataOhlsson$kon)),
+               stringsAsFactors = FALSE)
+
+new.cols <- foreach (rating.factor = c("zon", "mcklass", "motorage_gr", "bonuskl", "driverage_gr", "kon"), .combine = rbind) %do% {
+    nclaims <- tapply(dataOhlsson$antskad,dataOhlsson[[rating.factor]], sum)
+    sums <- tapply(dataOhlsson$duration, dataOhlsson[[rating.factor]],sum)
+    severity <- tapply(dataOhlsson$skadkost,dataOhlsson[[rating.factor]],sum)
+    n.levels <- nlevels(dataOhlsson[[rating.factor]])
+    contrasts(dataOhlsson[[rating.factor]]) <-
+        contr.treatment(n.levels)[rank(-sums, ties.method = "first"), ]
+    data.frame(duration = sums, n.claims = nclaims, sev = severity/nclaims)}
+
+motorcycle.new <- cbind(motorcycle.new, new.cols)
+rm(new.cols)
+
+grDataOhlsson.new <- dataOhlsson %>% group_by(bonuskl, zon, mcklass, motorage_gr, kon, driverage_gr) %>% summarize(duration = sum(duration),
+                                                                                                                   antskad=sum(antskad),
+                                                                                                                   skadkost=sum(skadkost))
+
+# Fit the Poisson GLM for frequency
+model.freq.new <- glm(antskad ~ zon + mcklass + motorage_gr + bonuskl + kon * driverage_gr +offset(log(duration)),
+                     family = poisson, 
+                     data = grDataOhlsson.new[grDataOhlsson.new$duration>0,])
+
+with(model.freq.new, 
+     cbind(res.deviance = deviance, df = df.residual, 
+     p = pchisq(deviance, df.residual, lower.tail = FALSE)))
+
+
+pchisq(model.freq.new$deviance - model.freq$deviance,
+       model.freq.new$df.residual - model.freq$df.residual, 
+       lower.tail=FALSE)
+```
+We have combined the ages into 2 groups given by the breaks 0, 30, 100. When including age and sex with an interaction term, for the frequency the deviance goes to $742.76$ on $1277$ degrees of freedom. The LRT statistic we get $742.76 - 360.22 =382.55$ on $1277 - 389=888$ degrees of freedom. The corresponding p-value is $1$, suggesting that the simpler model is a better fit. 
+
+```{r}
+# Fit the Gamma GLM for severity
+model.sev.new <- glm(skadkost/antskad ~ zon + mcklass + motorage_gr + bonuskl + kon * driverage_gr, 
+                     family = Gamma("log"), 
+                     data = grDataOhlsson.new[grDataOhlsson.new$antskad>0,],
+                     weights = antskad)
+
+with(model.sev.new, 
+     cbind(res.deviance = deviance, df = df.residual, 
+     p = pchisq(deviance, df.residual, lower.tail = FALSE)))
+
+pchisq(model.sev.new$deviance - model.sev$deviance * summary(model.sev)$dispersion / summary(model.sev.new)$dispersion, 
+       model.sev.new$df.residual - model.sev$df.residual,
+       lower.tail=FALSE)
+```
+
+For the severity however, the LRT statistic is given by $253.12$ on $124$ degrees of freedom, with corresponding p-value given by $7.09 \times 10^{−11}$. Hence in this case, the age and sex do appear to provide a model that has a better fit. We also see that for both the frequency and the severity models, while sex is not a significant factor, the interaction term between age and sex and the coefficient for the age group 0-30 are both significant.
+
+## Question 6
+
+Now combine your multiplier estimates for the frequency and severity data to get multipliers (and associated 95% confidence intervals) for the premium overall and then propose a new tariff based on your analysis. Compare the results to the old tariff.
+
+#### Solution:
+```{r}
+
+
+# Generate the table for new tariff
+table.q6 = matrix(0, nrow = dim(motorcycle)[1] + 1, ncol = 5)
+colnames(table.q6) = c("Rating factor", "Class", "Multiplier", "Lower bound", "Upper bound")
+
+# Intercept
+estimate.freq = mat.freq[1, 1]
+std.error.freq = mat.freq[1, 2]
+estimate.sev = mat.sev[1, 1]
+std.error.sev = mat.sev[1, 2]
+table.q6[1, ] = c("Intercept", "0", exp(estimate.freq + estimate.sev), 
+                  exp(estimate.freq + estimate.sev - 1.96 * sqrt(std.error.freq^2 + std.error.sev^2)), 
+                  exp(estimate.freq + estimate.sev + 1.96 * sqrt(std.error.freq^2 + std.error.sev^2)))
+
+# Zone
+estimate.freq = P.zon %*% mat.freq[2:7, 1]
+std.error.freq = P.zon %*% mat.freq[2:7, 2]
+estimate.sev = P.zon %*% mat.sev[2:7, 1]
+std.error.sev = P.zon %*% mat.sev[2:7, 2]
+table.q6[2:8, ] = cbind(rep("Zone", 7), seq(7), exp(estimate.freq + estimate.sev), 
+                  exp(estimate.freq + estimate.sev - 1.96 * sqrt(std.error.freq^2 + std.error.sev^2)), 
+                  exp(estimate.freq + estimate.sev + 1.96 * sqrt(std.error.freq^2 + std.error.sev^2)))
+
+# Vehicle class
+estimate.freq = P.mcklass %*% mat.freq[8:13, 1]
+std.error.freq = P.mcklass %*% mat.freq[8:13, 2]
+estimate.sev = P.mcklass %*% mat.sev[8:13, 1]
+std.error.sev = P.mcklass %*% mat.sev[8:13, 2]
+table.q6[9:15, ] = cbind(rep("Vehicle class", 7), seq(7), exp(estimate.freq + estimate.sev), 
+                   exp(estimate.freq + estimate.sev - 1.96 * sqrt(std.error.freq^2 + std.error.sev^2)), 
+                   exp(estimate.freq + estimate.sev + 1.96 * sqrt(std.error.freq^2 + std.error.sev^2)))
+# Vehicle age
+estimate.freq = P.motorage_gr %*% mat.freq[14:15, 1]
+std.error.freq = P.motorage_gr %*% mat.freq[14:15, 2]
+estimate.sev = P.motorage_gr %*% mat.sev[14:15, 1]
+std.error.sev = P.motorage_gr %*% mat.sev[14:15, 2]
+table.q6[16:18, ] = cbind(rep("Vehicle age", 3), seq(3), exp(estimate.freq + estimate.sev), 
+                    exp(estimate.freq + estimate.sev - 1.96 * sqrt(std.error.freq^2 + std.error.sev^2)), 
+                    exp(estimate.freq + estimate.sev + 1.96 * sqrt(std.error.freq^2 + std.error.sev^2)))
+# Bonus class
+estimate.freq = P.motorage_gr %*% mat.freq[16:17, 1]
+std.error.freq = P.motorage_gr %*% mat.freq[16:17, 2]
+estimate.sev = P.motorage_gr %*% mat.sev[16:17, 1]
+std.error.sev = P.motorage_gr %*% mat.sev[16:17, 2]
+table.q6[19:21, ] = cbind(rep("Bonus class", 3), seq(3), exp(estimate.freq + estimate.sev), 
+                    exp(estimate.freq + estimate.sev - 1.96 * sqrt(std.error.freq^2 + std.error.sev^2)), 
+                    exp(estimate.freq + estimate.sev + 1.96 * sqrt(std.error.freq^2 + std.error.sev^2)))
+
+# Append the old tariff
+tariff.old <- c(0, 
+                7.768, 4.227, 1.336, 1.000, 1.734, 1.402, 1.402,
+                0.625, 0.769, 1.000, 1.406, 1.875, 4.062, 6.873,
+                2.000, 1.200, 1.000,
+                1.250, 1.125, 1.000)
+
+table.q6 <- cbind(table.q6, tariff.old)
+as_tibble(table.q6)
+```
+We see that the new tariff is much higher than the old one for Vehicle Age 1 and 2. We also
+see that for Zone 5 to 7, the new tariff suggests to lower the premium compared to the baseline
+of Zone 4, while for the old tariff they were all higher than the baseline. The number of claims
+for these 3 zones is very small though, so it seems like it might be best to not make such an
+important change based on such a small sample.
+
+## Question 7
+Comment on any further analysis that should be considered before deciding on a final tariff.
+
+#### Solution:
+we saw that, especially for the severity, the age and sex seem to be significant factors
+that should be considered. On the other hand, looking at the results for coefficients in each of the
+frequency and severity models (reproduced below), we see that Zones 5,6,7 (note that although
+the results below are based on the ordering of levels by decreasing order of duration, and therefore
+do not necessarily correspond to the original numbering, for these 3 particular classes are actually
+the same as in the original ordering) do not seem to be significant, and should therefore probably
+be combined with the baseline of Zone 4. Finally, we should explore the use of models other than
+the gamma distribution for the severity, to see if a better fit can be obtained.

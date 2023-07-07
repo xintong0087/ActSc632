@@ -276,6 +276,9 @@ model.freq.new <- glm(antskad ~ zon + mcklass + motorage_gr + bonuskl + kon * dr
                      family = poisson, 
                      data = grDataOhlsson.new[grDataOhlsson.new$duration>0,])
 
+summary(model.freq.new)
+
+
 with(model.freq.new, 
      cbind(res.deviance = deviance, df = df.residual, 
      p = pchisq(deviance, df.residual, lower.tail = FALSE)))

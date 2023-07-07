@@ -502,7 +502,51 @@ model.freq.new &lt;- glm(antskad ~ zon + mcklass + motorage_gr + bonuskl + kon *
                      family = poisson, 
                      data = grDataOhlsson.new[grDataOhlsson.new$duration&gt;0,])
 
-with(model.freq.new, 
+summary(model.freq.new)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = antskad ~ zon + mcklass + motorage_gr + bonuskl + 
+##     kon * driverage_gr + offset(log(duration)), family = poisson, 
+##     data = grDataOhlsson.new[grDataOhlsson.new$duration &gt; 0, 
+##         ])
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -2.9912  -0.5387  -0.2641  -0.0966   3.2357  
+## 
+## Coefficients:
+##                    Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)        -6.13050    0.11987 -51.143  &lt; 2e-16 ***
+## zon2                0.45601    0.11521   3.958 7.56e-05 ***
+## zon3                0.96550    0.10556   9.146  &lt; 2e-16 ***
+## zon4                1.52077    0.10422  14.592  &lt; 2e-16 ***
+## zon5                0.08555    0.24644   0.347 0.728477    
+## zon6               -0.19576    0.34116  -0.574 0.566094    
+## zon7               -0.38264    1.00267  -0.382 0.702744    
+## mcklass2            0.48761    0.11564   4.217 2.48e-05 ***
+## mcklass3            0.10523    0.12839   0.820 0.412464    
+## mcklass4            1.04927    0.11496   9.128  &lt; 2e-16 ***
+## mcklass5            0.27220    0.16893   1.611 0.107108    
+## mcklass6            0.53139    0.15510   3.426 0.000612 ***
+## mcklass7            0.60680    0.41774   1.453 0.146342    
+## motorage_gr2        0.58949    0.09806   6.011 1.84e-09 ***
+## motorage_gr3        1.18334    0.10421  11.355  &lt; 2e-16 ***
+## bonuskl2           -0.11613    0.09405  -1.235 0.216941    
+## bonuskl3            0.02437    0.10773   0.226 0.821043    
+## kon1                0.14331    0.16424   0.873 0.382898    
+## driverage_gr1       1.58460    0.08336  19.009  &lt; 2e-16 ***
+## kon1:driverage_gr1 -1.06716    0.28804  -3.705 0.000212 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for poisson family taken to be 1)
+## 
+##     Null deviance: 1590.07  on 1296  degrees of freedom
+## Residual deviance:  742.76  on 1277  degrees of freedom
+## AIC: 1559
+## 
+## Number of Fisher Scoring iterations: 7</code></pre>
+<pre class="r"><code>with(model.freq.new, 
      cbind(res.deviance = deviance, df = df.residual, 
      p = pchisq(deviance, df.residual, lower.tail = FALSE)))</code></pre>
 <pre><code>##      res.deviance   df p
@@ -623,7 +667,7 @@ as_tibble(table.q6)</code></pre>
 <p>Comment on any further analysis that should be considered before deciding on a final tariff.</p>
 <div id="solution-6" class="section level4">
 <h4>Solution:</h4>
-<p>we saw that, especially for the severity, the age and sex seem to be significant factors that should be considered. On the other hand, looking at the results for coefficients in each of the frequency and severity models (reproduced below), we see that Zones 5,6,7 (note that although the results below are based on the ordering of levels by decreasing order of duration, and therefore do not necessarily correspond to the original numbering, for these 3 particular classes are actually the same as in the original ordering) do not seem to be significant, and should therefore probably be combined with the baseline of Zone 4. Finally, we should explore the use of models other than the gamma distribution for the severity, to see if a better fit can be obtained. 5</p>
+<p>we saw that, especially for the severity, the age and sex seem to be significant factors that should be considered. On the other hand, looking at the results for coefficients in each of the frequency and severity models (reproduced below), we see that Zones 5,6,7 (note that although the results below are based on the ordering of levels by decreasing order of duration, and therefore do not necessarily correspond to the original numbering, for these 3 particular classes are actually the same as in the original ordering) do not seem to be significant, and should therefore probably be combined with the baseline of Zone 4. Finally, we should explore the use of models other than the gamma distribution for the severity, to see if a better fit can be obtained.</p>
 </div>
 </div>
 </div>

@@ -1,0 +1,433 @@
+#install.packages("CASdatasets", repos = "http://cas.uqam.ca/pub/R/", type="source")
+library(CASdatasets)
+library(MASS)
+
+data(credit)
+head(credit)
+sum(credit$class)
+
+########################################################
+#part (2)
+########################################################
+
+#box plots
+attach(credit)
+pdf("box1.pdf")
+par(mfrow=c(1,2))
+boxplot(age[class==0],age[class==1],names=c("Good","Bad"),ylab = "age",col=c("blue","orange"))
+boxplot(duration[class==0],duration[class==1],names=c("Good","Bad"),ylab = "duration",col=c("blue","orange"))
+dev.off()
+detach(credit)
+
+#q2 -- plots of two predictors asked
+attach(credit)
+par(mfrow=c(1,1))
+csG<-savings[class==0]
+csB<-savings[class==1]
+dG<-duration[ class==0]
+dB<-duration[class==1]
+pdf("dur-sav.pdf")
+plot(dG,csG,col=c("green"),pch=0,axes = F)
+par(new=T)
+plot(dB,csB,col=c("red"),pch=1,xlab="duration",ylab="savings",axes=T)
+dev.off()
+detach(credit)
+
+attach(credit)
+pdf("dur-credh.pdf")
+par(mfrow=c(1,1))
+chG<-credit_history[class==0]
+chB<-credit_history[class==1]
+
+plot(dG,chG,col=c("green"),pch=0,axes = F)
+par(new=T)
+plot(dB,chB,col=c("red"),pch=1,xlab="duration",ylab="credit_history",axes=T)
+dev.off()
+detach(credit)
+
+########################################################
+#part (3)
+########################################################
+
+##useful function to get error rates from confusion table
+##will be used repeatedly
+
+myerr<-function(tab){
+E=c(0,0,0)
+E[1]<-(tab[1,2]+tab[2,1])/sum(tab[,])
+E[2]<-tab[2,1]/sum(tab[,1])
+E[3]<-tab[1,2]/sum(tab[,2])
+return(E)
+}
+
+
+#logistic
+log.5<-glm(class~age+duration+purpose+credit_history+savings,data=credit,family="binomial")
+
+probLogReg5<-predict(log.5,credit,type="response")
+confusion.log5<-table(probLogReg5>0.5,credit$class)
+
+#          0   1
+#  FALSE 646 192
+#  TRUE   54 108
+
+myerr(confusion.log5)
+
+##lda
+lda.5<-lda(class~age+duration+purpose+credit_history+savings,data=credit)
+conf5.lda<-table(predict(lda.5)$class, credit$class)
+myerr(conf5.lda)
+
+#qda
+qda.5<-qda(class~age+duration+purpose+credit_history+savings,data=credit)
+conf5.qda<-table(predict(qda.5)$class, credit$class)
+myerr(conf5.qda)
+
+#ROC curves
+
+#install.packages("pROC")
+library(pROC)
+pdf("log5-roc.pdf")
+roc.log5<-roc(credit$class,probLogReg5,plot=TRUE)
+dev.off()
+
+pdf("lda5-roc.pdf")
+roc.lda5<-roc(credit$class,predict(lda.5)$posterior[,2],plot=TRUE)
+dev.off()
+
+pdf("qda5-roc.pdf")
+roc.qda5<-roc(credit$class,predict(qda.5)$posterior[,2],plot=TRUE)
+dev.off()
+
+########################################################
+#part (4)
+########################################################
+
+log0<-glm(class~age+duration+purpose+credit_history+savings,data=credit,family="binomial")
+
+predictors<- names(credit) [-grep('class',names(credit))]
+formula <-as.formula(paste("y ~",paste(names(credit[,predictors]),collapse="+")))
+
+step(log.5,direction='forward',trace=TRUE,scope=list(upper=formula))
+
+log.7<-glm(class~age+duration+purpose+credit_history+savings+checking_status+other_parties,data=credit,family="binomial")
+
+probLogReg7<-predict(log.7,credit,type="response")
+confusion.log7<-table(probLogReg7>0.5,credit$class)
+
+myerr(confusion.log7)
+
+
+pdf("roc-log7.pdf")
+roc.log7<-roc(credit$class,probLogReg7,plot=TRUE)
+dev.off()
+#Area under the curve: 0.8073
+
+
+lda.7<-lda(class~age+duration+purpose+credit_history+savings+checking_status+other_parties,data=credit)
+conf.lda<-table(predict(lda.7)$class, credit$class)
+myerr(conf.lda)
+
+
+roc.lda7<-roc(credit$class,predict(lda.7)$posterior[,2],plot=TRUE)
+#Area under the curve: 0.8059
+
+
+qda.7<-qda(class~age+duration+purpose+credit_history+savings+checking_status+other_parties,data=credit)
+conf.qda<-table(predict(qda.7)$class, credit$class)
+myerr(conf.qda)
+
+pdf("roc-qda7.pdf")
+roc.qda7<-roc(credit$class,predict(qda.7)$posterior[,2],plot=TRUE)
+dev.off()
+#Area under the curve: 0.7917
+
+########################################################
+#part (5)
+########################################################
+
+
+facteur<-4
+mincost<-700+facteur*300
+for(i in 1:999){
+ c<-coords(roc.log7,i/1000,input="thr")
+ cost <- (1-c[2])*700+facteur*(1-c[3])*300
+ if(cost<mincost){
+   optthr<-i/1000
+   mincost<-cost
+   opttp<-c[3]
+   optfn<-1-c[3]
+   opttn<-c[2]
+   optfp<-1-c[2]
+}
+}
+#> optthr
+#[1] 0.167
+
+########################################################
+#part (6)
+########################################################
+
+##youden
+
+maxreward<-0
+for(i in 1:999){
+ c<-coords(roc.log7,i/1000,input="thr")
+ reward <- c[2]+c[3]
+ if(reward>maxreward){
+   optthr<-i/1000
+   maxreward<-reward
+   opttp<-c[3]
+   optfn<-1-c[3]
+   opttn<-c[2]
+   optfp<-1-c[2]
+}
+}
+# optthr
+#[1] 0.295
+
+
+confusion.log7opt<-table(probLogReg7>0.167,credit$class)
+conf.ldaopt<-table(predict(lda.7)$posterior[,2]>0.167, credit$class)
+conf.qdaopt<-table(predict(qda.7)$posterior[,2]>0.167, credit$class)
+
+myerr(confusion.log7opt)
+myerr(conf.ldaopt)
+myerr(conf.qdaopt)
+
+###
+
+confusion.log7opt2<-table(probLogReg7>0.295,credit$class)
+conf.ldaopt2<-table(predict(lda.7)$posterior[,2]>0.295, credit$class)
+conf.qdaopt2<-table(predict(qda.7)$posterior[,2]>0.295, credit$class)
+
+myerr(confusion.log7opt2)
+myerr(conf.ldaopt2)
+myerr(conf.qdaopt2)
+########################################################
+#part (7)
+########################################################
+
+###
+mycostoverall <- function(r, pi){
+ weight1 = 1 #cost for getting 1 wrong
+ weight0 = 1 #cost for getting 0 wrong
+ c1 = (r==1)&(pi<0.295) #logical vector - true if actual 1 but predict 0
+ c0 = (r==0)&(pi>0.295) #logical vecotr - true if actual 0 but predict 1
+ return(mean(weight1*c1+weight0*c0))
+ }
+
+cv.error=cv.glm(credit,log.7,cost=mycostoverall,K=10)$delta[1]
+
+mycosttype2 <- function(r, pi){
+ weight1 = 1 #cost for getting 1 wrong
+ weight0 = 0 #cost for getting 0 wrong
+ c1 = (r==1)&(pi<0.295) #logical vector - true if actual 1 but predict 0
+ c0 = (r==0)&(pi>0.295) #logical vecotr - true if actual 0 but predict 1
+denom = (r==1)
+ return(sum(weight1*c1+weight0*c0)/sum(denom))
+ }
+
+cv.errortype2=cv.glm(credit,log.7,cost=mycosttype2,K=10)$delta[1]
+####
+
+## 
+##
+cv.lda <-
+  function (data, model=origin~., yname="origin", K=10, seed=123, thres) {
+    n <- nrow(data)
+    set.seed(seed)
+    datay=data[,yname] #response variable
+    #partition the data into K subsets
+    f <- ceiling(n/K)
+    s <- sample(rep(1:K, f), n)  
+    #generate indices 1:10 and sample n of them  
+    # K fold cross-validated error
+    
+    CV=NULL
+    CV2= NULL
+    
+    for (i in 1:K) { #i=1
+      test.index <- seq_len(n)[(s == i)] #test data
+      train.index <- seq_len(n)[(s != i)] #training data
+      
+      #model with training data
+      lda.fit=lda(model, data=data[train.index,])
+      #observed test set y
+      lda.y <- data[test.index, yname]
+      #predicted test set y
+     # lda.predy=predict(lda.fit, data[test.index,])$class
+      lda.predy<-predict(lda.fit,data[test.index,])$posterior[,2]>thres
+      
+      #observed - predicted on test data
+      error= mean(lda.y!=lda.predy)
+      #for type 2 error
+      error2 = sum((lda.y!=lda.predy) & lda.predy==0)/sum(lda.y==1)
+      #error rates 
+      CV=c(CV,error)
+      CV2=c(CV2,error2)
+    }
+    #Output
+    list(call = model, K = K, 
+         lda_error_rate = mean(CV), lda_type2_error = mean(CV2), seed = seed)  
+  }
+##
+
+model.lda<-class~age+duration+purpose+credit_history+savings+checking_status+other_parties
+lda.error.cv<-cv.lda(credit,model=model.lda,yname="class",K=10,seed=123,0.295)$lda_error_rate
+lda.error2.cv<-cv.lda(credit,model=model.lda,yname="class",K=10,seed=123,0.295)$lda_type2_error
+
+# avec threshold 0.295
+#[1] 0.291
+
+##
+cv.qda <-
+  function (data, model=origin~., yname="origin", K=10, seed=123, thres) {
+    n <- nrow(data)
+    set.seed(seed)
+    datay=data[,yname] #response variable
+   #partition the data into K subsets
+    f <- ceiling(n/K)
+    s <- sample(rep(1:K, f), n)  
+    #generate indices 1:10 and sample n of them  
+    # K fold cross-validated error
+    
+    CV=NULL
+    CV2 = NULL
+
+    for (i in 1:K) { #i=1
+      test.index <- seq_len(n)[(s == i)] #test data
+      train.index <- seq_len(n)[(s != i)] #training data
+      
+      #model with training data
+      qda.fit=qda(model, data=data[train.index,])
+      #observed test set y
+      qda.y <- data[test.index, yname]
+      #predicted test set y
+     # lda.predy=predict(lda.fit, data[test.index,])$class
+      qda.predy<-predict(qda.fit,data[test.index,])$posterior[,2]>thres
+      
+      #observed - predicted on test data
+      error= mean(qda.y!=qda.predy)
+      #for type 2 error
+      error2 = sum((qda.y!=qda.predy) & qda.predy==0)/sum(qda.y==1)
+      #error rates 
+      CV=c(CV,error)
+      CV2=c(CV2,error2)
+    }
+    #Output
+    list(call = model, K = K, 
+         qda_error_rate = mean(CV), qda_error2_rate=mean(CV2),seed = seed)  
+  }
+
+model.qda<-class~age+duration+credit_history+savings+checking_status+other_parties
+#removed purpose to not have rank deficiency
+#model.qda<-class~age+duration+savings+checking_status+other_parties
+qda.error.cv<-cv.qda(credit,model=model.qda,yname="class",K=10,seed=123,0.295)$qda_error_rate
+#[1] 0.29
+
+qda.error2.cv<-cv.qda(credit,model=model.qda,yname="class",K=10,seed=123,0.295)$qda_error2_rate
+#[1] 0.3233
+
+
+#recheck with this model
+qda.6nop<-qda(class~age+duration+credit_history+savings+checking_status+other_parties,data=credit)
+conf.qdanop<-table(predict(qda.6nop)$posterior[,2]>0.321,
+credit$class)
+myerr(conf.qdanop)
+#[1] 0.2630000 0.2528571 0.2866667
+
+########################################################
+#part (8)
+########################################################
+
+##apply knn
+
+library(class)
+
+size.train<-750
+train.index<-sample(1:1000,size.train)
+
+
+#y<-c(1,3,4,6,10)
+#y<-c(2,5,8,11,13,16,18)
+y<-c(2,5,13)
+credit.std<-credit[,y]
+for(i in 1:length(y)){
+credit.std[,i]<-as.numeric(credit[,y[i]])
+}
+
+#credit.std[,-c(7,9,12,14,15,17,19,20,21)]<-scale(credit.std[,-c(7,9,12,14,15,17,19,20,21)])
+credit.std<-scale(credit.std)
+
+var(credit.std[,2])
+
+
+train.X<-credit.std[train.index,]
+train.Y<-credit[train.index,21]
+
+test.X<-credit.std[-train.index,]
+test.Y<-credit[-train.index,21]
+
+knn.7.k1<-knn(train.X,test.X,train.Y,k=1)
+knn.tab1<-table(knn.7.k1,test.Y)
+myerr(knn.tab1)
+
+knn.7.k3<-knn(train.X,test.X,train.Y,k=3)
+knn.tab3<-table(knn.7.k3,test.Y)
+myerr(knn.tab3)
+
+
+knn.7.k5<-knn(train.X,test.X,train.Y,k=5)
+knn.tab5<-table(knn.7.k5,test.Y)
+myerr(knn.tab5)
+
+########################################################
+#part (9)
+########################################################
+
+
+knn.cv <- function(klist,x.train,y.train,nfolds) {
+	# Cross-validation for kNN
+	#
+	# Perform nfolds-cross validation of kNN, for the values of k in klist
+	
+	# Number of instances
+	n.train <- nrow(x.train)
+	
+	# Matrix to store predictions
+	p.cv <- matrix(NA, n.train, length(klist))
+	
+	# Prepare the folds
+	s <- split(sample(n.train),rep(1:nfolds,length=n.train))
+	
+	# Cross-validation
+	for (i in seq(nfolds)) {
+              for(j in 1:length(klist))
+		p.cv[s[[i]],j] <- knn(x.train[-s[[i]],], x.train[s[[i]],] ,y.train[-s[[i]]],klist[j])
+	}
+	
+	# Return matrix of CV predictions
+	invisible(p.cv)
+}
+
+
+newtrain.X<-credit.std
+newtrain.Y<-credit[,21]
+
+
+myklist<-c(1,3,5)
+pred.cv<-knn.cv(myklist,newtrain.X,newtrain.Y,10)
+
+myres<-matrix(0,2,length(myklist))
+for(j in 1:length(myklist)){
+table<-table(pred.cv[,j],newtrain.Y)
+myres[1,j]<-(table[1,2]+table[2,1])/length(newtrain.Y)
+myres[2,j]<-(table[1,2])/sum(table[,2])
+}
+
+myres
+#          [,1]      [,2]  [,3]
+#[1,] 0.3130000 0.2890000 0.277
+#[2,] 0.5133333 0.5666667 0.580
+

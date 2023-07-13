@@ -1,0 +1,131 @@
+library(tree)
+library(CASdatasets)
+library(pROC)
+
+data(credit)
+
+within(credit,{
+installment_rate <-factor(installment_rate)
+residence_since <- factor(residence_since)
+existing_credits <- factor(existing_credits)
+num_dependents <- factor(num_dependents)
+})
+
+#Q1
+set.seed(1)
+train<-sample(1:nrow(credit),0.7*nrow(credit))
+
+credit$class<-as.factor(credit$class)
+
+#Q2
+tree.credit<-tree(class~.,data=credit,subset=train)
+summary(tree.credit)
+pdf("1tree.pdf")
+plot(tree.credit)
+text(tree.credit,pretty=0,cex=0.5)
+dev.off()
+
+
+pred.tree.cred<-predict(tree.credit,newdata=credit[-train,],type="class")
+
+credit.test<-credit$class[-train]
+tree.tab<-table(pred.tree.cred,credit.test)
+#              credit.test
+#pred.tree.cred   0   1
+#             0 196  73
+#             1   9  22
+
+#computing error
+
+(tree.tab[1,2]+tree.tab[2,1])/sum(tree.tab[,])
+#[1] 0.2733333
+
+tree.tab[2,1]/sum(tree.tab[,1])
+#[1] 0.04390244
+
+tree.tab[1,2]/sum(tree.tab[,2])
+#[1] 0.7684211
+
+tree.dev.pred<- predict(tree.credit,newdata=credit[-train,],type="tree")
+deviance(tree.dev.pred)
+#[1] 495.1042
+
+pdf("roc-1tree.pdf")
+roc(credit.test,predict(tree.credit,newdata=credit[-train,],type="vector")[,2],plot=TRUE)
+dev.off()
+
+#Q3
+cv.credit<-cv.tree(tree.credit,FUN=prune.misclass)
+prune.credit<-prune.misclass(tree.credit,best=8)
+plot(prune.credit)
+text(prune.credit,cex=0.5)
+
+summary(prune.credit)
+
+# computing prediction error on test set
+
+pred.prune.cred<-predict(prune.credit,credit[-train,],type="class")
+prune.tab<-table(pred.prune.cred,credit.test)
+
+
+(prune.tab[1,2]+prune.tab[2,1])/sum(prune.tab[,])
+
+prtree.dev.pred<- predict(prune.credit,newdata=credit[-train,],type="tree")
+deviance(prtree.dev.pred)
+#[1] 327.5961
+
+pred.prune.cred.prob<-predict(prune.credit,credit[-train,])
+pdf("prune-roc.pdf")
+roc.prune.cred<-roc(credit.test,pred.prune.cred.prob[,2],plot=TRUE)
+dev.off()
+
+#Q4
+library(randomForest)
+
+
+set.seed(5)
+fullbag.credit<-randomForest(class~.,data=credit,subset=train,mtry=20,importance=TRUE)
+yhat.bag<-predict(fullbag.credit,newdata=credit[-train,])
+bag.tab<-table(yhat.bag,credit.test)
+#       credit.test
+#yhat.rf   0   1
+#      0 183  58
+#      1  22  37
+importance(fullbag.credit)      
+
+rf.credit<-randomForest(class~.,data=credit,subset=train,mtry=5,importance=TRUE)
+
+yhat.rf<-predict(rf.credit,newdata=credit[-train,])
+rf.tab<-table(yhat.rf,credit.test)
+
+#        credit.test
+#yhat.bag   0   1
+#       0 189  63
+#       1  16  32
+importance(rf.credit)
+#                             0          1 MeanDecreaseAccuracy MeanDecreaseGini
+#checking_status     16.7803740 25.0114183           27.1814300       30.1053680
+#duration            14.7090000  8.9795797           17.1260150       27.6568058
+#credit_history      10.5227000  4.1314985           10.5233399       18.3861358
+#purpose              6.8795709  5.3532864            8.5691666       29.2834252
+#credit_amount        8.4240586  3.9369396            9.5996697       33.5392004
+#savings              4.8927794  9.6071697            9.9151907       15.0276465
+#employment           4.0242095  2.7977124            4.9673425       17.5574765
+#installment_rate     3.7365018  0.3191347            3.2136817        9.8315243
+#personal_status      0.2249812  4.6933067            3.1388380       11.0259437
+#other_parties        5.7865555  1.0562192            5.4929849        5.3562436
+#residence_since      3.7079967  2.6824127            4.5970305       10.5242386
+#property_magnitude   7.0732376  0.2346903            6.0028960       13.6931488
+#age                  6.7299106  1.5377233            6.4788231       26.9599747
+#other_payment_plans  8.6930904  2.2798716            8.5682549        9.1262923
+#housing              5.3241901 -1.2925214            3.4663216        7.4747619
+#existing_credits     5.6946280 -0.2533839            5.0567411        5.6735258
+#job                  4.1661624 -2.7586636            1.8503047        8.6885175
+#num_dependents       1.2729462 -1.2640427            0.3140759        2.6109374
+#telephone            1.6152947 -0.2833933            1.1720520        4.1649827
+#foreign_worker       0.8814411  2.4730227            2.1304262        0.9558564
+
+
+varImpPlot(rf.credit)
+
+

@@ -1,0 +1,54 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{epsfig}
+\usepackage{hyperref}
+
+\setlength{\textheight}{8.85in}
+\setlength{\textwidth}{6.75in}
+\setlength{\topmargin}{0.0in}
+\setlength{\headheight}{0.0in}
+\setlength{\headsep}{0.0in}
+\setlength{\oddsidemargin}{-.125in}
+\setlength{\parskip}{2mm}
+\setlength{\parindent}{0mm}
+
+\begin{document}
+\begin{center}
+{\large \bf ACTSC 632 -- Project for Module 5 -- due on July 21} \\
+
+\end{center}
+
+In this project you will work with the same credit data set as for the project for Module 4, and with the same team. Whether you want to use the same team leader or not as for the previous project is left up to you. 
+
+%dataset that is used in Chapters 10 and 11 of Duncan's book.
+The goal of this project is to compare different classification methods based on  trees for this problem and make a recommendation on what is the best method to use.
+
+
+\begin{enumerate}
+  \item First randomly split your data in 70\% of the observations for training and 30\% for testing.
+\item Simply using recursive binary partitioning, obtain a tree for this classification problem.
+  \begin{enumerate}
+  \item How many leaves does your tree have?
+    \item How many factors were used to build this tree?
+  \item What is the deviance for this tree? (If you used something else than the default definition of deviance in R, please specify how is deviance determined).
+  \item Plot the tree you obtained using R. There should be enough information that given an observation, one could determine in which leaf it ends up. %Provide an example with one observation to describe this process.
+    \item Use your tree to make predictions for the test data set. Produce the confusion matrix corresponding to your tree and plot the ROC curve.
+  \end{enumerate}
+\item Now try to use pruning to see if you can improve your results.
+  \begin{enumerate}
+  \item Using the function {\tt cv.tree} in R,  determine the optimal level of complexity for the tree, i.e., the number of terminal nodes in the tree that minimizes the test prediction error (estimated by cross-validation). Does pruning the tree improve the deviance? The prediction error? Use the test set to answer the latter two questions.
+    \item If pruning helps, then produce the confusion matrix for the pruned tree based on the optimal level of complexity and plot the corresponding ROC curve.
+  \end{enumerate}
+\item Now try bagging and random forests to see if you can improve your results.
+  \begin{enumerate}
+  \item Provide the confusion table obtained using bagging.
+  \item Provide the confusion table obtained using random forests. How many variables were each split chosen from? 
+      \item According to the results obtained based on random forests, which predictors seem the most important? Provide data and/or plots to answer this question.
+  \end{enumerate}
+  \item Conclude by making a suggestion as to which of the above methods is the best for this problem.
+  \end{enumerate}
+
+\end{document}

@@ -186,12 +186,14 @@ model.sev <- glm(skadkost/antskad ~ zon + mcklass + motorage_gr + bonuskl,
                  data=grDataOhlsson[grDataOhlsson$skadkost>0,],
                  weights=antskad)
 
-with(model.sev, cbind(res.deviance = deviance, 
+sev.phi<-summary(model.sev)$dispersion
+
+with(model.sev, cbind(res.deviance = deviance/sev.phi, 
                       df = df.residual, 
-                      p = pchisq(deviance, df.residual, lower.tail = FALSE)))
+                      p = pchisq(deviance/sev.phi, df.residual, lower.tail = FALSE)))
 ```
 
-The severity model doesn’t seem to be a very good fit. We reject the hypothesis that the data comes from this model based on the residual deviance, given by $351$ on $164$ degrees of freedom, as its corresponding p-value is $1.13842 \times 10^{-15}$.
+The severity model is a good fit. We do not have sufficient evidence to reject the hypothesis based on the residual deviance, given by $171.9565$ on $164$ degrees of freedom, as its corresponding p-value is $0.3195037$.
 
 ```{r}
 # Generate the table for relative severity
@@ -283,8 +285,9 @@ with(model.freq.new,
      cbind(res.deviance = deviance, df = df.residual, 
      p = pchisq(deviance, df.residual, lower.tail = FALSE)))
 
-
-pchisq(model.freq.new$deviance - model.freq$deviance,
+print(c(model.freq$deviance, model.freq.new$deviance, 
+      model.freq.new$df.residual - model.freq$df.residual))
+pchisq(model.freq$deviance - model.freq.new$deviance,
        model.freq.new$df.residual - model.freq$df.residual, 
        lower.tail=FALSE)
 ```
@@ -297,16 +300,24 @@ model.sev.new <- glm(skadkost/antskad ~ zon + mcklass + motorage_gr + bonuskl + 
                      data = grDataOhlsson.new[grDataOhlsson.new$antskad>0,],
                      weights = antskad)
 
-with(model.sev.new, 
-     cbind(res.deviance = deviance, df = df.residual, 
-     p = pchisq(deviance, df.residual, lower.tail = FALSE)))
+sev.phi.new <- summary(model.sev.new)$dispersion
 
-pchisq(model.sev.new$deviance - model.sev$deviance * summary(model.sev)$dispersion / summary(model.sev.new)$dispersion, 
-       model.sev.new$df.residual - model.sev$df.residual,
-       lower.tail=FALSE)
+cbind(res.deviance = model.sev.new$deviance,
+      df = model.sev.new$df.residual,
+      p = pchisq(model.sev.new$deviance/sev.phi.new, model.sev.new$df.residual, lower.tail = FALSE))
+
+print(c(model.sev$deviance, model.sev.new$deviance, 
+      model.sev.new$df.residual - model.sev$df.residual))
+cbind(diff.deviance = (model.sev.new$deviance - model.sev$deviance)/sev.phi.new ,
+      diff.df = model.sev.new$df.residual - model.sev$df.residual,
+      p = pchisq((model.sev.new$deviance - model.sev$deviance)/sev.phi.new,
+                 model.sev.new$df.residual - model.sev$df.residual,
+                 lower.tail = FALSE))
 ```
 
-For the severity however, the LRT statistic is given by $253.12$ on $124$ degrees of freedom, with corresponding p-value given by $7.09 \times 10^{−11}$. Hence in this case, the age and sex do appear to provide a model that has a better fit. We also see that for both the frequency and the severity models, while sex is not a significant factor, the interaction term between age and sex and the coefficient for the age group 0-30 are both significant.
+For the severity however, the LRT statistic is given by $130.72$ on $124$ degrees of freedom, 
+with corresponding p-value given by $0.3221792$. 
+Hence in this case, including age and sex does not provide a model that has a better fit. 
 
 ## Question 6
 

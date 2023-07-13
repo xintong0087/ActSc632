@@ -1,0 +1,69 @@
+# ActSc 632 Assignment 2 Solutions
+##### Spring 2023
+##### Department of Statistics and Actuarial Science, University of Waterloo
+
+## Question 1
+Determine the number of predictors in this data set, and whether they are quantitative of qualita-
+tive. How many observations are there? How many observations are classiﬁed as a “bad credit”?
+“good credit”?
+
+```{r}
+library(MASS)
+library(CASdatasets)
+
+# Load the data
+data(credit)
+
+# Summary of the data
+summary(credit)
+print(c(sum(credit$class == 1),
+        sum(credit$class == 0)))
+
+```
+There are 20 predictors. Duration, credit amount, age are quantitative, and the other
+are qualitative. Depending on the encoding used for the data set (which diﬀers from source
+to source) the predictors installment rate, residence since, existing credits and num dependents
+may be encoded as integers and thus be a priori be considered quantitative. But when looking
+at the meaning of the diﬀerent values these predictors can take, it seems best to treat them as
+categorical. It won’t matter in our analysis though, as these 4 predictors do not end up being
+considered in our models. and the others are categorical. There are 300 observations out of 1000
+classiﬁed as bad credit.
+
+
+```{r}
+
+#box plots
+attach(credit)
+# pdf("box1.pdf")
+par(mfrow=c(1,2))
+boxplot(age[class==0],age[class==1],names=c("Good","Bad"),ylab = "age",col=c("blue","orange"))
+boxplot(duration[class==0],duration[class==1],names=c("Good","Bad"),ylab = "duration",col=c("blue","orange"))
+dev.off()
+detach(credit)
+
+#q2 -- plots of two predictors asked
+attach(credit)
+par(mfrow=c(1,1))
+csG<-savings[class==0]
+csB<-savings[class==1]
+dG<-duration[ class==0]
+dB<-duration[class==1]
+# pdf("dur-sav.pdf")
+plot(dG,csG,col=c("green"),pch=0,axes = F)
+par(new=T)
+plot(dB,csB,col=c("red"),pch=1,xlab="duration",ylab="savings",axes=T)
+dev.off()
+detach(credit)
+
+attach(credit)
+# pdf("dur-credh.pdf")
+par(mfrow=c(1,1))
+chG<-credit_history[class==0]
+chB<-credit_history[class==1]
+
+plot(dG,chG,col=c("green"),pch=0,axes = F)
+par(new=T)
+plot(dB,chB,col=c("red"),pch=1,xlab="duration",ylab="credit_history",axes=T)
+dev.off()
+detach(credit)
+```

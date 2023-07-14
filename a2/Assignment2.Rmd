@@ -8,11 +8,20 @@ tive. How many observations are there? How many observations are classiﬁed as 
 “good credit”?
 
 ```{r}
-library(MASS)
+library(tree)
 library(CASdatasets)
+library(pROC)
+library(randomForest)
 
 # Load the data
 data(credit)
+
+within(credit,{
+installment_rate <-factor(installment_rate)
+residence_since <- factor(residence_since)
+existing_credits <- factor(existing_credits)
+num_dependents <- factor(num_dependents)
+})
 
 # Summary of the data
 summary(credit)
@@ -30,40 +39,208 @@ considered in our models. and the others are categorical. There are 300 observat
 classiﬁed as bad credit.
 
 
+## Question 2
+To explore the data further, produce the following plots: 
+
+* for each of the predictors age and duration, make a box plot showing the distribution of the observations, separately for the "good" and "bad" observations;
+* for the pairs duration & savings and duration & credit history, plot the observations (using duration on the x axis) and use different symbols for the "good" and "bad" observations. 
+
+Comments on the plots you obtained.
+
 ```{r}
-
-#box plots
-attach(credit)
-# pdf("box1.pdf")
 par(mfrow=c(1,2))
-boxplot(age[class==0],age[class==1],names=c("Good","Bad"),ylab = "age",col=c("blue","orange"))
-boxplot(duration[class==0],duration[class==1],names=c("Good","Bad"),ylab = "duration",col=c("blue","orange"))
-dev.off()
-detach(credit)
 
-#q2 -- plots of two predictors asked
-attach(credit)
-par(mfrow=c(1,1))
-csG<-savings[class==0]
-csB<-savings[class==1]
-dG<-duration[ class==0]
-dB<-duration[class==1]
-# pdf("dur-sav.pdf")
-plot(dG,csG,col=c("green"),pch=0,axes = F)
-par(new=T)
-plot(dB,csB,col=c("red"),pch=1,xlab="duration",ylab="savings",axes=T)
-dev.off()
-detach(credit)
+# Create a box plot of 'age' for the two classes, displayed inline
+boxplot(credit$age[credit$class==0], credit$age[credit$class==1],
+        names=c("Good","Bad"), ylab = "age", col=c("blue","orange"))
 
-attach(credit)
-# pdf("dur-credh.pdf")
-par(mfrow=c(1,1))
-chG<-credit_history[class==0]
-chB<-credit_history[class==1]
-
-plot(dG,chG,col=c("green"),pch=0,axes = F)
-par(new=T)
-plot(dB,chB,col=c("red"),pch=1,xlab="duration",ylab="credit_history",axes=T)
-dev.off()
-detach(credit)
+# Create a box plot of 'duration' for the two classes, displayed inline
+boxplot(credit$duration[credit$class==0], credit$duration[credit$class==1],
+        names=c("Good","Bad"), ylab = "duration", col=c("blue","orange"))
 ```
+Clearly the bad credit observations seems to have a longer duration, and the distribution of the
+duration has a larger variance; they also seem to be slightly younger compared to the good credit.
+
+```{r}
+# Set up the plotting area
+par(mfrow=c(1,1))
+
+# Subset 'savings' and 'duration' for the two classes
+csG<-credit$savings[credit$class==0]
+csB<-credit$savings[credit$class==1]
+dG<-credit$duration[credit$class==0]
+dB<-credit$duration[credit$class==1]
+
+# Plot 'duration' vs 'savings' for the two classes, displayed inline
+plot(dG, csG, col=c("green"), pch=0, axes = F, ylab="", xlab="")
+par(new=T)
+plot(dB, csB, col=c("red"), pch=1, xlab="duration", ylab="savings", axes=T)
+
+# Set up the plotting area
+par(mfrow=c(1,1))
+
+# Subset 'credit_history' for the two classes
+chG<-credit$credit_history[credit$class==0]
+chB<-credit$credit_history[credit$class==1]
+
+# Plot 'duration' vs 'credit_history' for the two classes, displayed inline
+plot(dG, chG, col=c("green"), pch=0, axes = F, ylab="", xlab="")
+par(new=T)
+plot(dB, chB, col=c("red"), pch=1, xlab="duration", ylab="credit history", axes=T)
+```
+
+It is harder to see a clear trend in these two graphs, in that the good and bad credits are not
+easily classified according to duration for a given level of credit history or savings.
+
+## Question 3
+Randomly split your data in 70% of the observations for training and 30% for testing.
+
+```{r}
+set.seed(1)
+train <- sample(1:nrow(credit), 0.7 * nrow(credit))
+
+credit$class <- as.factor(credit$class)
+```
+
+## Question 4
+Simply using recursive binary partitioning, obtain a tree for this classifcation problem.
+
+* How many leaves does your tree have?
+* How many factors were used to build this tree?
+* What is the deviance for this tree? (If you used something else than the default definition
+of deviance in R, please specify how is deviance determined).
+* Plot the tree you obtained using R. There should be enough information that given an
+observation, one could determine in which leaf it ends up.
+* Use your tree to make predictions for the test data set. Produce the confusion matrix
+corresponding to your tree and plot the ROC curve.
+
+```{r}
+tree.credit<-tree(class~.,data=credit,subset=train)
+summary(tree.credit)
+```
+So there are 11 leaves and 7 factors were used. The deviance is 0.9321. Note that since the
+tree will depend on the training set, which is randomly chosen, you may have obtained a tree
+that has a quite different structure, with a different subset of factors used, and a different
+number of terminal nodes. As mentioned in class, this method has a high variance, which
+is why the results can be so different.
+
+```{r}
+plot(tree.credit)
+text(tree.credit,pretty=0,cex=0.5)
+```
+
+We recall that the categories listed on a node are those used to determine which observations
+go in the left child.
+
+```{r}
+pred.tree.cred<-predict(tree.credit,newdata=credit[-train,],type="class")
+
+credit.test<-credit$class[-train]
+tree.tab<-table(pred.tree.cred,credit.test)
+
+tree.tab
+
+print(c("Overall error:", (tree.tab[1,2]+tree.tab[2,1])/sum(tree.tab[,])))
+
+print(c("Type I error:", tree.tab[2,1]/sum(tree.tab[,1])))
+
+print(c("Type II error:", tree.tab[1,2]/sum(tree.tab[,2])))
+
+tree.dev.pred <- predict(tree.credit,newdata=credit[-train,],type="tree")
+
+print(c("Deviance:", deviance(tree.dev.pred)))
+
+roc(credit.test,predict(tree.credit,newdata=credit[-train,],type="vector")[,2],plot=TRUE)
+```
+
+The ROC curve has AUC of 0.7124.
+
+## Question 5
+Now try to use pruning to see if you can improve your results.
+
+```{r}
+cv.credit<-cv.tree(tree.credit,FUN=prune.misclass)
+print(cv.credit)
+prune.credit<-prune.misclass(tree.credit,best=5)
+plot(prune.credit)
+text(prune.credit,cex=0.5)
+
+summary(prune.credit)
+
+pred.prune.cred<-predict(prune.credit,credit[-train,],type="class")
+prune.tab<-table(pred.prune.cred,credit.test)
+
+print(c("Overall error:", (prune.tab[1,2]+prune.tab[2,1])/sum(prune.tab[,])))
+
+prtree.dev.pred<- predict(prune.credit,newdata=credit[-train,],type="tree")
+print(c("Deviance:", deviance(prtree.dev.pred)))
+
+pred.prune.cred.prob<-predict(prune.credit,credit[-train,])
+roc.prune.cred<-roc(credit.test,pred.prune.cred.prob[,2],plot=TRUE)
+print(c("AUC", roc.prune.cred$auc))
+
+```
+The overall error has slightly improved.
+The deviance has improved to 323.3462, and the ROC curve now has AUC of 0.7383.
+
+## Question 6
+Now try bagging and random forests to see if you can improve your results.
+        
+```{r}
+set.seed(5)
+fullbag.credit<-randomForest(class~.,data=credit,subset=train,mtry=20,importance=TRUE)
+yhat.bag<-predict(fullbag.credit,newdata=credit[-train,])
+bag.tab<-table(yhat.bag,credit.test)
+
+bag.tab
+
+rf.credit<-randomForest(class~.,data=credit,subset=train,mtry=20,importance=TRUE)
+
+yhat.rf<-predict(rf.credit,newdata=credit[-train,])
+rf.tab<-table(yhat.rf,credit.test)
+
+rf.tab
+
+varImpPlot(rf.credit)
+```
+
+We see that whether we use the accuracy (prediction error) or Gini index, the predictor
+checking status seems very important, as well as duration. Other important predictors are
+credit history and savings, purpose, age and credit amount. These are pretty consistent
+with the (limited set of ) predictors that were used to construct the pruned tree.
+
+## Question 7
+Conclude by making a suggestion as to which of the above methods is the best for this problem.
+```{r}
+res.table <- data.frame(matrix(ncol = 4, nrow = 4))
+
+colnames(res.table) <- c("Method", "Overall error", "Type I error", "Type II error")
+
+res.table[1,1] <- "Single Tree"
+res.table[1,2] <- (tree.tab[1,2]+tree.tab[2,1])/sum(tree.tab[,])
+res.table[1,3] <- tree.tab[2,1]/sum(tree.tab[,1])
+res.table[1,4] <- tree.tab[1,2]/sum(tree.tab[,2])
+
+res.table[2,1] <- "Pruned Tree"
+res.table[2,2] <- (prune.tab[1,2]+prune.tab[2,1])/sum(prune.tab[,])
+res.table[2,3] <- prune.tab[2,1]/sum(prune.tab[,1])
+res.table[2,4] <- prune.tab[1,2]/sum(prune.tab[,2])
+
+res.table[3,1] <- "Bagging"
+res.table[3,2] <- (bag.tab[1,2]+bag.tab[2,1])/sum(bag.tab[,])
+res.table[3,3] <- bag.tab[2,1]/sum(bag.tab[,1])
+res.table[3,4] <- bag.tab[1,2]/sum(bag.tab[,2])
+
+res.table[4,1] <- "Random Forest"
+res.table[4,2] <- (rf.tab[1,2]+rf.tab[2,1])/sum(rf.tab[,])
+res.table[4,3] <- rf.tab[2,1]/sum(rf.tab[,1])
+res.table[4,4] <- rf.tab[1,2]/sum(rf.tab[,2])
+
+res.table
+```
+
+Based on our results, the single tree is definitely not a good choice. Among the three other
+methods, the pruned tree has the best overall prediction error and type-1 error, but bagging has
+the lowest type-2 error. Given that bagging and random forest have much less variance, our
+assessment of their performance is much more reliable than for the single tree and pruned tree
+and as such, we would recommend using one of those two methods.

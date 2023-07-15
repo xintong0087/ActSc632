@@ -1,0 +1,440 @@
+# ActSc 632 Test 2 Solutions
+##### Spring 2023
+##### Department of Statistics and Actuarial Science, University of Waterloo
+
+```{r}
+library(dplyr) 
+```
+
+## Question 1
+
+By examining the *KenyaCarInsurance* data set, state how many tariff cells there are. Also, determine how many rating factors we have, as well as the number of categories for each rating factor.
+
+### Solution
+
+```{r}
+KenyaCarInsurance<-read.csv("KenyaCarInsurance.csv",header=TRUE,sep=',') 
+
+head(KenyaCarInsurance, 3)
+
+KenyaCarInsurance <- within(KenyaCarInsurance, { 
+
+    age <- factor(Age_group) 
+
+    gender <- factor(Gender) 
+
+    license <- factor(License_Type) 
+
+}) 
+
+nrow(KenyaCarInsurance)
+```
+
+The number of tariff cells is 24. There are 3 rating factors age group, gender and license_type, and the number of categories for each rating factor are 
+
+```{r}
+levels(KenyaCarInsurance$age) 
+
+levels(KenyaCarInsurance $gender) 
+
+levels(KenyaCarInsurance $license) 
+
+
+```
+
+The predictor age has 6 categories, while the predictors gender and license-type have 2 categories 
+
+For each tariff cell, we have information about duration (the number of policyholder years of experience within the tariff cell), number (number of claims in the tariff cell) and severity (average claim for each tariff cell) 
+
+## Question 2
+You are asked to set as the base tariff cell (for both the frequency and severity models) the one with
+the largest duration. Identify explicitly this base tariff cell.
+
+### Solution
+
+The new basecell is 
+
+```{r}
+print(basecell <- KenyaCarInsurance[which.max(KenyaCarInsurance$exposure_years), 1:3]) 
+
+KenyaCarInsurance$age<-relevel(KenyaCarInsurance$age, as.character(basecell$Age_group)) 
+
+KenyaCarInsurance$gender<-relevel(KenyaCarInsurance$gender, as.character(basecell$Gender)) 
+
+KenyaCarInsurance$license<-relevel(KenyaCarInsurance$license, as.character(basecell$License_Type)) 
+
+```
+
+## Question 3
+Model the frequency data using a glm based on the relative Poisson distribution and a log-link function. Using the concept of deviance, discuss the overall fit of this model. Does the relative Poisson glm model seem reasonable to fit the frequency data? Comment.
+
+### Solution
+
+```{r}
+summary(freq <-glm(nb_claims ~ age + gender + license + offset(log(exposure_years)), family=poisson("log"), data=KenyaCarInsurance[KenyaCarInsurance$exposure_years > 0,])) 
+```
+
+The scaled deviance is  
+
+```{r}
+cbind(scaled.deviance = freq$deviance,
+      df = freq$df.residual,
+      p = 1 - pchisq(freq$deviance, freq$df.residual))
+```
+
+The fit of the model as measured by the deviance is not good. The (scaled) deviance statistic is  
+
+```{r}
+freq$deviance
+```
+
+which is above the critical value at a 95% confidence level of a chi-square rv with  
+
+```{r}
+freq$df.residual
+```
+
+degrees of freedom, which is  
+
+```{r}
+qchisq(0.95, freq$df.residual)
+```
+
+As such, we have evidence to reject the null hypothesis and we therefore conclude that the relative Poisson model does not provide a good fit for the data set in question. 
+
+## Question 4
+Now model the frequency data using a glm based on the relative quasi-Poisson distribution, still with a log-link function. Using the concept of deviance, discuss the overall fit of this model. Does the relative quasi-Poisson glm model seem reasonable to fit the frequency data? Comment.
+
+### Solution
+
+Below is a trained quasi-Poisson glm model
+```{r}
+summary(freqqp <-glm(nb_claims ~ age + gender + license + offset(log(exposure_years)), family=quasipoisson("log"), data=KenyaCarInsurance[KenyaCarInsurance$exposure_years > 0,])) 
+```
+
+with estimated dispersion
+
+```{r}
+print(freqqp.phi<-summary(freqqp)$dispersion)
+```
+
+we compute the scaled deviance and this time we do not reject the null hypothesis that the quais-Poisson model provides a good fit for the data, as our p-value is now 0.429.
+
+```{r}
+cbind(scaled.deviance=freqqp$deviance/freqqp.phi,df=freqqp$df.residual,p=1-pchisq(freqqp$deviance/freqqp.phi,freqqp$df.residual)) 
+```
+
+## Question 5
+Propose a potential simplification to the relative quasi-Poisson glm model of Q4 by dropping one of the rating factors and explain your choice. Via a likelihood ratio test argument, determine whether or not you are statistically justified to simplify the relative quasi-Poisson glm model of Q4. State the null and alternative hypothesis of this likelihood ratio test together with its test statistics. Continue the test with the model chosen in this sub-question.
+
+### Solution
+Suggestion to simplify the relative Poisson glm model: based on the parameter estimation, we suggest to remove gender.
+
+```{r}
+summary(freqqp1 <-glm(nb_claims~ age + license + offset(log(exposure_years)), family=quasipoisson("log"), data=KenyaCarInsurance[KenyaCarInsurance$exposure_years > 0,])) 
+```
+
+The likelihood ratio is:
+
+* $H_0$: beta of the rating factor "gender" is 0 
+* $H_a$: this betas is different than 0 
+
+```{r}
+print(ltest1<-anova(freqqp1,freqqp)) 
+
+qchisq(0.95,ltest1$Df[2]) 
+```
+
+with the scaled deviance of  
+
+```{r}
+ltest1$Deviance[2]/freqqp.phi 
+
+1-pchisq(ltest1$Deviance[2]/freqqp.phi,ltest1$Df[2]) 
+```
+
+The (scaled) deviance moves up from  
+
+```{r}
+freqqp$deviance/freqqp.phi 
+```
+
+for the model in Q4 to  
+
+```{r}
+freqqp1$deviance/freqqp.phi 
+```
+
+When the predictor "gender" is not included in the relative Poisson glm model. Given that  
+
+```{r}
+ltest1$Df[2] 
+```
+
+degrees of freedom are gained with the simplified model, we shall compare the gain in deviance of 
+
+```{r}
+freqqp1$deviance/freqqp.phi - freqqp$deviance/freqqp.phi  
+```
+
+to the critical value at a 95% confidence level of a chi-square rv with  
+
+```{r}
+ltest1$Df[2] 
+```
+
+degree of freedom, which is  
+
+```{r}
+qchisq(0.95,ltest1$Df[2]) 
+```
+
+As such, we are statistically justified to simplify the modelby excluding the predictor "gender" from the glm model.
+
+## Question 6
+
+Using the relative quasi-Poisson glm model chosen in Q5:
+
+(a) estimate the multipliers (i.e., relativities) for the frequency data and provide a 95% confidence interval for each.
+
+(b) identify the tariff cell with the largest expected number of claims per exposure period. Find the expected number of claims per year for a policy in this tariff cell.
+
+### Solution
+
+#### Part (a)
+
+Relativities and CI (at a 95% confidence level) for the relative Poisson glm model is
+```{r}
+cbind(exp(freqqp1$coefficients),exp(freqqp1$coefficients-qnorm(0.975)*sqrt(diag(vcov(freqqp1)))),exp(freqqp1$coefficients+qnorm(0.975)*sqrt(diag(vcov(freqqp1))))) 
+```
+#### Part (b) 
+
+The tariff cell with the most expected claim per exposure period is age group 1 and license 2.
+You identify this tariff cell by picking for each rating factor the beta which is the greatest 
+The expected number of claim over one policy yearsfor a policyholder in this tariff cell is  
+
+```{r}
+prod(exp(freqqp1$coefficients)[c(1,2,7)]) 
+```
+
+The tariff cell with the less expected claim per exposure period is age group 5 and license 1.
+You identify this tariff cell by picking for each rating factor the beta which is the smallest.
+The expected number of claim over two policy years for a policyholder in this tariff cell is 
+
+```{r}
+prod(exp(freqqp1$coefficients)[c(1,5)] ) 
+```
+
+## Question 7
+Model the severity data using a glm based on the gamma distribution and a log-link function. Using the concept of deviance, discuss the overall fit of the model. Does the gamma glm model seem reasonable to model the claim severity data set? Comment.
+
+### Solution
+
+Below is a trained gamma glm model:
+
+```{r}
+summary(sev <- glm(severity ~ age + gender + license, family = Gamma("log"), data = KenyaCarInsurance[KenyaCarInsurance$nb_claims > 0, ], weights = nb_claims)) 
+
+sev.phi<-summary(sev)$dispersion 
+
+cbind(res.deviance = sev$deviance/sev.phi, df = sev$df.residual, p = 1-pchisq(sev$deviance/sev.phi, sev$df.residual)) 
+```
+
+As measured by the deviance statistic, the gamma glm fit seems to be quite good. We obtain an unscaled deviance of  
+
+```{r}
+sev$deviance  
+```
+
+with an estimated dispersion parameter of  
+
+```{r}
+sev.phi  
+```
+
+which leads to a scaled deviance of  
+
+```{r}
+sev$deviance/sev.phi 
+```
+  
+This should be compared with the critical value at a 95% confidence level of a chi-square rv with  
+
+```{r} 
+sev$df.residual 
+```
+
+degrees of freedom, which is  
+
+```{r}
+qchisq(0.95,sev$df.residual)  
+```
+
+yielding a p-value for the test of  
+
+```{r}
+1-pchisq(sev$deviance/sev.phi, sev$df.residual) 
+```
+
+The gamma glm seems to offer a very good fit to the data.
+
+## Question 8
+
+You are now asked to combine the age category 6 (70 and above) with the age category 4 (31-50) in the gamma glm model of Q7. Using a likelihood ratio test, comment on the appropriateness to do so. State the null and alternative hypothesis of this likelihood ratio test. Are you statistically justified to simplify the model in Q7 to the one suggested here? Comment.
+
+### Solution
+
+Merge categories 6 with 4 for age:
+
+```{r}
+levels(KenyaCarInsurance$age)<-recode(levels(KenyaCarInsurance$age), "4"="4 & 6") 
+levels(KenyaCarInsurance$age)<-recode(levels(KenyaCarInsurance$age), "6"="4 & 6") 
+
+levels(KenyaCarInsurance$age)<-recode(levels(KenyaCarInsurance$age), "5"="5") 
+
+summary(sev1 <- glm(severity~ age + gender + license, family = Gamma("log"), data = KenyaCarInsurance[KenyaCarInsurance$nb_claims > 0, ], weights = nb_claims)) 
+```
+
+Likelihood ratio test:
+
+```{r}
+print(ltest3<-anova(sev1,sev)) 
+```
+
+Compare the critical value of  
+
+```{r}
+qchisq(0.95,ltest3$Df[2]) 
+```
+
+with the scaled deviance of  
+  
+```{r}
+ltest3$Deviance[2]/sev.phi 
+```
+  
+Otherwise, the p-value of the test is  
+
+```{r}
+1-pchisq(ltest3$Deviance[2]/sev.phi,ltest3$Df[2]) 
+```
+  
+The likelihood ratio test consists of
+* H0: combined beta for age group 4 and age group 6  
+* Ha: More general model in Q7 
+
+The unscaled deviance moves up from  
+
+```{r} 
+sev$deviance 
+```
+  
+for the model in Q7 to  
+
+```{r}
+sev1$deviance  
+```
+  
+for the model in Q8. Given that  
+
+```{r}
+ltest3$Df[2] 
+```
+
+degrees of freedom are gained with the simplified model, we shall compare the gain in scaled deviance of  
+
+```{r}
+(sev1$deviance-sev$deviance)/sev.phi 
+```
+  
+to the critical value at a 95% confidence level of a chi-square rv with  
+
+```{r}
+ltest3$Df[2]  
+```
+  
+degrees of freedom, which is  
+
+```{r}
+qchisq(0.95,ltest3$Df[2]) 
+```
+  
+As such, we are statistically justified to simplify the model in Q7 to the model in Q8.
+
+## Question 9
+Based on your recommendation in Q8:
+
+(a) estimate the multipliers (i.e., relativities) for the severity data and provide a 95% confidenceinterval for each.
+
+(b) identify the tariff cell with the largest expected claim size. Find this expected claim size.
+
+(c) identify the tariff cell with the smallest expected claim size. Find this expected claim size.
+
+
+Multipliers with 95% confidence interval :
+  
+```{r}
+cbind(exp(sev1$coefficients),exp(sev1$coefficients-qt(0.975,sev1$df.residual)*sqrt(diag(vcov(sev1)))),exp(sev1$coefficients+qt(0.975,sev1$df.residual)*sqrt(diag(vcov(sev1))))) 
+```
+  
+The tariff cell with the largest expected claim amount is age = 1, gender = 2  and license is 2 
+
+```{r}
+prod(exp(sev1$coefficients)[c(1,2,6,7)]) 
+```
+  
+while the tariff cell with the less expected claim amount is age = 5, gender = 1, license = 1  
+
+```{r}
+prod(exp(sev1$coefficients)[c(1,5)] ) 
+```
+
+## Question 10 
+
+For the tariff cell age = 2, gender = male (1) , license = 2 the expected key frequency ratio is 
+
+```{r}
+prod(exp(freqqp1$coefficients)[c(1,3,7)]) 
+```
+  
+while the expected severity key ratio is  
+
+```{r}
+prod(exp(sev1$coefficients)[c(1,3,6,7)]) 
+```
+  
+for a pure premium of  
+  
+```{r}
+prod(exp(freqqp1$coefficients)[c(1,3,7)])*prod(exp(sev1$coefficients)[c(1,3,6,7)]) 
+```
+  
+For the tariff cell age = 6, gender = female and license = 1 the expected key frequency ratio is  
+
+```{r}
+prod(exp(freqqp1$coefficients)[c(1,6)]) 
+```
+
+while the expected severity key ratio is  
+
+```{r}
+prod(exp(sev1$coefficients)[c(1)]) 
+```
+  
+for a pure premium of  
+  
+```{r}
+prod(exp(freqqp1$coefficients)[c(1,6)])*prod(exp(sev1$coefficients)[c(1)]) 
+```
+  
+Therefore, the expected pure premium for the 60 policies is 
+
+```{r}
+20*prod(exp(freqqp1$coefficients)[c(1,3,7)])*prod(exp(sev1$coefficients)[c(1,3,6,7)])+40*prod(exp(freqqp1$coefficients)[c(1,6)])*prod(exp(sev1$coefficients)[c(1)]) 
+```
+
+For the set of policies, the expected number of claims is  
+
+```{r}
+print(meannb<-20*prod(exp(freqqp1$coefficients)[c(1,3,7)])+40*prod(exp(freqqp1$coefficients)[c(1,6)])) 
+```

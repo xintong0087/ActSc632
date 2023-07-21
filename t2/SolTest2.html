@@ -660,13 +660,9 @@ each rating factor the beta which is the greatest The expected number of
 claim over one policy yearsfor a policyholder in this tariff cell is</p>
 <pre class="r"><code>prod(exp(freqqp1$coefficients)[c(1,2,7)]) </code></pre>
 <pre><code>## [1] 0.1148324</code></pre>
-<p>The tariff cell with the less expected claim per exposure period is
-age group 5 and license 1. You identify this tariff cell by picking for
-each rating factor the beta which is the smallest. The expected number
-of claim over two policy years for a policyholder in this tariff cell
-is</p>
-<pre class="r"><code>prod(exp(freqqp1$coefficients)[c(1,5)] ) </code></pre>
-<pre><code>## [1] 0.04806138</code></pre>
+<!-- The tariff cell with the less expected claim per exposure period is age group 5 and license 1.
+You identify this tariff cell by picking for each rating factor the beta which is the smallest.
+The expected number of claim over two policy years for a policyholder in this tariff cell is -->
 </div>
 </div>
 </div>
@@ -853,8 +849,13 @@ gender = 1, license = 1</p>
 </div>
 <div id="question-10" class="section level2">
 <h2>Question 10</h2>
-<p>For the tariff cell age = 2, gender = male (1) , license = 2 the
-expected key frequency ratio is</p>
+<p>Based on your multiplier estimates for the frequency (obtained in Q6)
+and severity data (obtained in Q9), find the pure premium for a set of
+60 independent 1-year policies of which a third are in tariff cell age =
+2, gender = 2, license = 2 while the remaining are in tariff cell age =
+6, gender = 1, and license = 1.</p>
+<p>For the tariff cell age = 2, gender = 2 , license = 2 the expected
+key frequency ratio is</p>
 <pre class="r"><code>prod(exp(freqqp1$coefficients)[c(1,3,7)]) </code></pre>
 <pre><code>## [1] 0.09998768</code></pre>
 <p>while the expected severity key ratio is</p>
@@ -863,8 +864,8 @@ expected key frequency ratio is</p>
 <p>for a pure premium of</p>
 <pre class="r"><code>prod(exp(freqqp1$coefficients)[c(1,3,7)])*prod(exp(sev1$coefficients)[c(1,3,6,7)]) </code></pre>
 <pre><code>## [1] 1033.329</code></pre>
-<p>For the tariff cell age = 6, gender = female and license = 1 the
-expected key frequency ratio is</p>
+<p>For the tariff cell age = 6, gender = 1 and license = 1 the expected
+key frequency ratio is</p>
 <pre class="r"><code>prod(exp(freqqp1$coefficients)[c(1,6)]) </code></pre>
 <pre><code>## [1] 0.05107014</code></pre>
 <p>while the expected severity key ratio is</p>
@@ -876,9 +877,6 @@ expected key frequency ratio is</p>
 <p>Therefore, the expected pure premium for the 60 policies is</p>
 <pre class="r"><code>20*prod(exp(freqqp1$coefficients)[c(1,3,7)])*prod(exp(sev1$coefficients)[c(1,3,6,7)])+40*prod(exp(freqqp1$coefficients)[c(1,6)])*prod(exp(sev1$coefficients)[c(1)]) </code></pre>
 <pre><code>## [1] 30622.59</code></pre>
-<p>For the set of policies, the expected number of claims is</p>
-<pre class="r"><code>print(meannb&lt;-20*prod(exp(freqqp1$coefficients)[c(1,3,7)])+40*prod(exp(freqqp1$coefficients)[c(1,6)])) </code></pre>
-<pre><code>## [1] 4.042559</code></pre>
 </div>
 </div>
 

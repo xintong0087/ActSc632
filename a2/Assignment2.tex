@@ -17,19 +17,29 @@
 
 \begin{document}
 \begin{center}
-{\large \bf ACTSC 632 -- Assignment 2 -- due on July 24} \\
+{\large \bf ACTSC 632 -- Assignment 2 -- due on July 28} \\
 \end{center}
 
 This assignment will consider the German Credit data set available in the {\tt CASdatasets} package in which it is named {\tt credit}.  As a team of data analysts for a credit card company, you have been asked to compare different classification methods and provide a recommendation to your manager for which one is the best to identify the ``good'' (i.e., creditworthy, no non-payments) vs the ``bad'' (not credit-worthy, having existing non-payments) credit files.
 
-The goal of this assignment is to compare different classification methods based on trees for this problem and make a recommendation on what is the best method to use.
+The goal of this assignment is to compare different classification methods for this problem and make a recommendation on what is the best method to use.
 
 \begin{enumerate}
 \item Determine the number of predictors in this data set, and whether they are quantitative of qualitative. How many observations are there? How many observations are classified as a ``bad credit''? ``good credit''? 
 %\item Determine the value of $k$ to use in the KNN approach. Try three different values and argue which one should be retained for further analysis.
-\item To explore the data further, produce the following plots: (i) for each of the predictors age and duration, make a box plot showing the distribution of the observations, separately for the ``good'' and ``bad'' observations.; (ii) for the pairs duration \& savings and duration \& credit history, plot the observations (using duration on the $x$ axis) and use different symbols for the ``good'' and ``bad'' observations. Comments on the plots you obtained.
-\item To prepare data for the tree models, randomly split your data in 70\% of the observations for training and 30\% for testing.
-\item Simply using recursive binary partitioning, obtain a tree for this classification problem.
+\item To explore the data further, produce the following plots: for each of the predictors age and duration, make a box plot showing the distribution of the observations, separately for the ``good'' and ``bad'' observations..
+\item To prepare data for building various classifiers, randomly split your data in 80\% of the observations for training and 20\% for testing.
+\item For this sub-question, you should work with the following predictors: age, duration, purpose, credit\_history, and savings. For each of (i) logistic regression 
+(ii) linear discriminant analysis (iii) quadratic discriminant analysis, do the following:
+  \begin{enumerate}
+  %\item Consider the age and duration predictor variables: plot the observations according to age (x axis) and duration (y axis) and then label them according to whether they are: TN, TP, FP, FN.
+  \item Use the training data to build each classifier and then use the test data set to determine the confusion matrix, the overall error rate, Type-I error, Type-II error.
+  \item Plot the ROC curve for the three methods considered and determine the AUC (area under the curve).
+  \end{enumerate}
+\item Next you wish to use the $K$ nearest neighbours (KNN) as a classifier for this problem, using the three predictors age, duration and credit\_amount. 
+Apply the KNN approach for each of $K=3,5$, and then for each value of $K$, use the test set to produce the confusion matrix, determine the overall error rate, Type-I error and Type-II error. Which choice of $K$ seems the best?
+ 
+\item Using recursive binary partitioning, obtain a tree for this classification problem.
   \begin{enumerate}
   \item How many leaves does your tree have?
     \item How many factors were used to build this tree?
@@ -42,16 +52,17 @@ The goal of this assignment is to compare different classification methods based
   \item Using the function {\tt cv.tree} in R,  determine the optimal level of complexity for the tree, i.e., the number of terminal nodes in the tree that minimizes the test prediction error (estimated by cross-validation). Does pruning the tree improve the deviance? The prediction error? Use the test set to answer the latter two questions.
     \item If pruning helps, then produce the confusion matrix for the pruned tree based on the optimal level of complexity and plot the corresponding ROC curve.
   \end{enumerate}
-\item Now try bagging and random forests to see if you can improve your results.
+  
+\item (Optional) Now try bagging and random forests to see if you can improve your results.
   \begin{enumerate}
   \item Provide the confusion table obtained using bagging.
-  \item Provide the confusion table obtained using random forests. How many variables were each split chosen from? 
+  \item Provide the confusion table obtained using random forests where you choose from a set of 10 predictors at each split. %How many variables were each split chosen from? 
       \item According to the results obtained based on random forests, which predictors seem the most important? Provide data and/or plots to answer this question.
   \end{enumerate}
   \item Conclude by making a suggestion as to which of the above methods is the best for this problem.
 \end{enumerate}
 
-You are allowed to work in teams of 2. Please indicate your teammate in your submission.
+You are allowed to work in teams of two. Please indicate your teammate in your submission.
 Your report should be submitted to the LEARN dropbox in R Markdown format that includes all code used. 
 It should be professionally organized, with a brief introduction.
 

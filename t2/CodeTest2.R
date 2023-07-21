@@ -30,9 +30,9 @@ KenyaCarInsurance <- within(KenyaCarInsurance, {
 
 levels(KenyaCarInsurance$age) 
 
-levels(KenyaCarInsurance $gender) 
+levels(KenyaCarInsurance$gender) 
 
-levels(KenyaCarInsurance $license) 
+levels(KenyaCarInsurance$license) 
 
   
 

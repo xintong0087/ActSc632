@@ -9,9 +9,12 @@ tive. How many observations are there? How many observations are classiﬁed as 
 
 ```{r, results = 'hide'}
 library(tree)
+library(MASS)
 library(CASdatasets)
 library(pROC)
 library(randomForest)
+library(class)
+
 
 # Load the data
 data(credit)
@@ -25,12 +28,9 @@ num_dependents <- factor(num_dependents)
 ```
 
 ```{r}
-
-# Summary of the data
 summary(credit)
 print(c(sum(credit$class == 1),
         sum(credit$class == 0)))
-
 ```
 There are 20 predictors. Duration, credit amount, age are quantitative, and the other
 are qualitative. Depending on the encoding used for the data set (which diﬀers from source
@@ -65,48 +65,110 @@ boxplot(credit$duration[credit$class==0], credit$duration[credit$class==1],
 Clearly the bad credit observations seems to have a longer duration, and the distribution of the
 duration has a larger variance; they also seem to be slightly younger compared to the good credit.
 
-```{r}
-# Set up the plotting area
-par(mfrow=c(1,1))
-
-# Subset 'savings' and 'duration' for the two classes
-csG<-credit$savings[credit$class==0]
-csB<-credit$savings[credit$class==1]
-dG<-credit$duration[credit$class==0]
-dB<-credit$duration[credit$class==1]
-
-# Plot 'duration' vs 'savings' for the two classes, displayed inline
-plot(dG, csG, col=c("green"), pch=0, axes = F, ylab="", xlab="")
-par(new=T)
-plot(dB, csB, col=c("red"), pch=1, xlab="duration", ylab="savings", axes=T)
-
-# Set up the plotting area
-par(mfrow=c(1,1))
-
-# Subset 'credit_history' for the two classes
-chG<-credit$credit_history[credit$class==0]
-chB<-credit$credit_history[credit$class==1]
-
-# Plot 'duration' vs 'credit_history' for the two classes, displayed inline
-plot(dG, chG, col=c("green"), pch=0, axes = F, ylab="", xlab="")
-par(new=T)
-plot(dB, chB, col=c("red"), pch=1, xlab="duration", ylab="credit history", axes=T)
-```
-
-It is harder to see a clear trend in these two graphs, in that the good and bad credits are not
-easily classified according to duration for a given level of credit history or savings.
 
 ## Question 3
-Randomly split your data in 70% of the observations for training and 30% for testing.
+Randomly split your data in 80% of the observations for training and 20% for testing.
 
 ```{r}
 set.seed(1)
-train <- sample(1:nrow(credit), 0.7 * nrow(credit))
+train <- sample(1:nrow(credit), 0.8 * nrow(credit))
 
 credit$class <- as.factor(credit$class)
+
+credit.train<-credit[train, ]
+credit.test<-credit[-train, ]
 ```
 
 ## Question 4
+For this sub-question, you should work with the following predictors: age, duration, purpose,
+credit history, and savings. For each of 
+
+* logistic regression,
+* linear discriminant analysis,
+* quadratic discriminant analysis,
+
+do the following:
+
+(a) Use the training data to build each classifier and then use the test data set to determine the confusion matrix, the overall error rate, Type-I error, Type-II error.
+
+(b) Plot the ROC curve for the three methods considered and determine the AUC (area under the curve).
+
+```{r}
+myerr<-function(tab){
+E=c(0,0,0)
+E[1]<-(tab[1,2]+tab[2,1])/sum(tab[,])
+E[2]<-tab[2,1]/sum(tab[,1])
+E[3]<-tab[1,2]/sum(tab[,2])
+return(E)
+}
+
+#logistic
+log.5<-glm(class~age+duration+purpose+credit_history+savings,data=credit.train,family="binomial")
+
+probLogReg5<-predict(log.5,newdata=credit.test,type="response")
+confusion.log5<-table(probLogReg5>0.5, credit.test$class)
+
+myerr(confusion.log5)
+
+##lda
+lda.5<-lda(class~age+duration+purpose+credit_history+savings,data=credit.train)
+conf5.lda<-table(predict(lda.5, newdata=credit.test)$class, credit.test$class)
+myerr(conf5.lda)
+
+#qda
+qda.5<-qda(class~age+duration+purpose+credit_history+savings,data=credit.train)
+conf5.qda<-table(predict(qda.5, newdata=credit.test)$class, credit.test$class)
+myerr(conf5.qda)
+
+#ROC curves
+
+roc.log5<-roc(credit.test$class,probLogReg5,plot=TRUE)
+
+roc.lda5<-roc(credit.test$class,predict(lda.5, newdata=credit.test)$posterior[,2],plot=TRUE)
+
+roc.qda5<-roc(credit.test$class,predict(qda.5, newdata=credit.test)$posterior[,2],plot=TRUE)
+```
+
+
+## Question 5
+Next you wish to use the K nearest neighbours (KNN) as a classifier for this problem, using the three predictors age, duration and credit amount. Apply the KNN approach for each of K = 1, 3, 5, and then for each value of K, use the test set to produce the confusion matrix, determine the overall error rate, Type-I error and Type-II error. Which choice of K seems the best?
+
+```{r}
+library(caret)
+y<-c(2,5,13)
+credit.train.knn<-credit.train[,y]
+credit.test.knn <- credit.test[,y]
+for(i in 1:length(y)){
+credit.train.knn[,i]<-as.numeric(credit.train[,y[i]])
+credit.test.knn[,i]<-as.numeric(credit.test[,y[i]])
+}
+
+train_data_means <- apply(credit.train.knn, 2, mean)
+train_data_sds <- apply(credit.train.knn, 2, sd)
+
+train.X <- scale(credit.train.knn, center = train_data_means, scale = train_data_sds)
+test.X  <- scale(credit.test.knn, center = train_data_means, scale = train_data_sds)
+
+train.Y<-credit.train$class
+test.Y<-credit.test$class
+
+knn.k1<-knn(train.X,test.X,train.Y,k=1)
+knn.tab1<-table(knn.k1,test.Y)
+myerr(knn.tab1)
+
+knn.k3<-knn(train.X,test.X,train.Y,k=3)
+knn.tab3<-table(knn.k3,test.Y)
+myerr(knn.tab3)
+
+
+knn.k5<-knn(train.X,test.X,train.Y,k=5)
+knn.tab5<-table(knn.k5,test.Y)
+myerr(knn.tab5)
+```
+
+The kNN with K=5 provides the best overall classification accuracy. However, one should consider smaller values of K when minimizing Type-II error is the top priority.
+
+## Question 6
 Simply using recursive binary partitioning, obtain a tree for this classifcation problem.
 
 * How many leaves does your tree have?
@@ -119,7 +181,7 @@ observation, one could determine in which leaf it ends up.
 corresponding to your tree and plot the ROC curve.
 
 ```{r}
-tree.credit<-tree(class~.,data=credit,subset=train)
+tree.credit<-tree(class~.,data=credit.train)
 summary(tree.credit)
 ```
 So there are 11 leaves and 7 factors were used. The deviance is 0.9321. Note that since the
@@ -137,29 +199,22 @@ We recall that the categories listed on a node are those used to determine which
 go in the left child.
 
 ```{r}
-pred.tree.cred<-predict(tree.credit,newdata=credit[-train,],type="class")
+pred.tree.cred<-predict(tree.credit,newdata=credit.test,type="class")
 
-credit.test<-credit$class[-train]
-tree.tab<-table(pred.tree.cred,credit.test)
+tree.tab<-table(pred.tree.cred,credit.test$class)
 
-tree.tab
+myerr(tree.tab)
 
-print(c("Overall error:", (tree.tab[1,2]+tree.tab[2,1])/sum(tree.tab[,])))
-
-print(c("Type I error:", tree.tab[2,1]/sum(tree.tab[,1])))
-
-print(c("Type II error:", tree.tab[1,2]/sum(tree.tab[,2])))
-
-tree.dev.pred <- predict(tree.credit,newdata=credit[-train,],type="tree")
+tree.dev.pred <- predict(tree.credit,newdata=credit.test,type="tree")
 
 print(c("Deviance:", deviance(tree.dev.pred)))
 
-roc(credit.test,predict(tree.credit,newdata=credit[-train,],type="vector")[,2],plot=TRUE)
+roc(credit.test$class,predict(tree.credit,newdata=credit.test,type="vector")[,2],plot=TRUE)
 ```
 
 The ROC curve has AUC of 0.7124.
 
-## Question 5
+## Question 7
 Now try to use pruning to see if you can improve your results.
 
 ```{r}
@@ -171,49 +226,46 @@ text(prune.credit,cex=0.5)
 
 summary(prune.credit)
 
-pred.prune.cred<-predict(prune.credit,credit[-train,],type="class")
-prune.tab<-table(pred.prune.cred,credit.test)
+pred.prune.cred<-predict(prune.credit,credit.test,type="class")
+prune.tab<-table(pred.prune.cred,credit.test$class)
 
-print(c("Overall error:", (prune.tab[1,2]+prune.tab[2,1])/sum(prune.tab[,])))
+myerr(prune.tab)
 
-prtree.dev.pred<- predict(prune.credit,newdata=credit[-train,],type="tree")
+prtree.dev.pred<- predict(prune.credit,newdata=credit.test,type="tree")
 print(c("Deviance:", deviance(prtree.dev.pred)))
 
-pred.prune.cred.prob<-predict(prune.credit,credit[-train,])
-roc.prune.cred<-roc(credit.test,pred.prune.cred.prob[,2],plot=TRUE)
+pred.prune.cred.prob<-predict(prune.credit,credit.test)
+roc.prune.cred<-roc(credit.test$class,pred.prune.cred.prob[,2],plot=TRUE)
 print(c("AUC", roc.prune.cred$auc))
 
 ```
 The overall error has slightly improved.
 The deviance has improved to 323.3462, and the ROC curve now has AUC of 0.7383.
 
-## Question 6
+## Question 8
 Now try bagging and random forests to see if you can improve your results.
         
 ```{r}
 set.seed(5)
-fullbag.credit<-randomForest(class~.,data=credit,subset=train,mtry=20,importance=TRUE)
-yhat.bag<-predict(fullbag.credit,newdata=credit[-train,])
-bag.tab<-table(yhat.bag,credit.test)
+fullbag.credit<-randomForest(class~.,data=credit.train,mtry=20,importance=TRUE)
+yhat.bag<-predict(fullbag.credit,newdata=credit.test)
+bag.tab<-table(yhat.bag,credit.test$class)
 
 bag.tab
 
-rf.credit<-randomForest(class~.,data=credit,subset=train,mtry=20,importance=TRUE)
+rf.credit<-randomForest(class~.,data=credit.train,mtry=10,importance=TRUE)
 
-yhat.rf<-predict(rf.credit,newdata=credit[-train,])
-rf.tab<-table(yhat.rf,credit.test)
+yhat.rf<-predict(rf.credit,newdata=credit.test)
+rf.tab<-table(yhat.rf,credit.test$class)
 
 rf.tab
 
 varImpPlot(rf.credit)
 ```
 
-We see that whether we use the accuracy (prediction error) or Gini index, the predictor
-checking status seems very important, as well as duration. Other important predictors are
-credit history and savings, purpose, age and credit amount. These are pretty consistent
-with the (limited set of ) predictors that were used to construct the pruned tree.
+We see that whether we use the accuracy (prediction error) or Gini index, the predictor checking status seems very important, as well as duration. Other important predictors are credit history and savings, purpose, age and credit amount. These are pretty consistent with the (limited set of) predictors that were used to construct the pruned tree.
 
-## Question 7
+## Question 9
 Conclude by making a suggestion as to which of the above methods is the best for this problem.
 ```{r}
 res.table <- data.frame(matrix(ncol = 4, nrow = 4))
@@ -221,29 +273,18 @@ res.table <- data.frame(matrix(ncol = 4, nrow = 4))
 colnames(res.table) <- c("Method", "Overall error", "Type I error", "Type II error")
 
 res.table[1,1] <- "Single Tree"
-res.table[1,2] <- (tree.tab[1,2]+tree.tab[2,1])/sum(tree.tab[,])
-res.table[1,3] <- tree.tab[2,1]/sum(tree.tab[,1])
-res.table[1,4] <- tree.tab[1,2]/sum(tree.tab[,2])
+res.table[1, 2:4] <- myerr(tree.tab)
 
 res.table[2,1] <- "Pruned Tree"
-res.table[2,2] <- (prune.tab[1,2]+prune.tab[2,1])/sum(prune.tab[,])
-res.table[2,3] <- prune.tab[2,1]/sum(prune.tab[,1])
-res.table[2,4] <- prune.tab[1,2]/sum(prune.tab[,2])
+res.table[2, 2:4] <- myerr(prune.tab)
 
 res.table[3,1] <- "Bagging"
-res.table[3,2] <- (bag.tab[1,2]+bag.tab[2,1])/sum(bag.tab[,])
-res.table[3,3] <- bag.tab[2,1]/sum(bag.tab[,1])
-res.table[3,4] <- bag.tab[1,2]/sum(bag.tab[,2])
+res.table[3, 2:4] <- myerr(bag.tab)
 
 res.table[4,1] <- "Random Forest"
-res.table[4,2] <- (rf.tab[1,2]+rf.tab[2,1])/sum(rf.tab[,])
-res.table[4,3] <- rf.tab[2,1]/sum(rf.tab[,1])
-res.table[4,4] <- rf.tab[1,2]/sum(rf.tab[,2])
+res.table[4, 2:4] <- myerr(rf.tab)
 
 res.table
 ```
 
-Based on our results, the random forest has the best overall prediction error and type-1 error
-and type-2 error. Given that bagging and random forest have much less variance, our
-assessment of their performance is much more reliable than for the single tree and pruned tree
-and as such, we would recommend using one of those two methods.
+Based on our results, random forest has the best overall prediction error and Type-I error, and bagging has the best Type-II error. Given that bagging and random forest have much less variance, our assessment of their performance is much more reliable than for the single tree and pruned tree and as such, we would recommend using one of those two methods.
